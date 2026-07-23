@@ -536,4 +536,323 @@ export function registerVsphereTools(server: McpServer, config: VsphereConfig) {
   }, async (params) => {
     return client.instantCloneVm(params);
   });
+
+  // --- VM CPU/Memory ---
+  server.tool("vsphere_get_vm_cpu", "Get VM CPU configuration details", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getVmCpu(params.vm_id);
+  });
+
+  server.tool("vsphere_update_vm_cpu", "Update VM CPU (count, cores, hot-add)", {
+    vm_id: z.string().describe("VM identifier"),
+    count: z.number().optional().describe("CPU count"),
+    cores_per_socket: z.number().optional().describe("Cores per socket"),
+    hot_add_enabled: z.boolean().optional().describe("Enable CPU hot-add"),
+    hot_remove_enabled: z.boolean().optional().describe("Enable CPU hot-remove"),
+  }, async (params) => {
+    const { vm_id, ...rest } = params;
+    return client.updateVmCpu(vm_id, rest);
+  });
+
+  server.tool("vsphere_get_vm_memory", "Get VM memory configuration details", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getVmMemory(params.vm_id);
+  });
+
+  server.tool("vsphere_update_vm_memory", "Update VM memory (size, hot-add)", {
+    vm_id: z.string().describe("VM identifier"),
+    size_MiB: z.number().optional().describe("Memory in MiB"),
+    hot_add_enabled: z.boolean().optional().describe("Enable memory hot-add"),
+  }, async (params) => {
+    const { vm_id, ...rest } = params;
+    return client.updateVmMemory(vm_id, rest);
+  });
+
+  // --- Individual device get/update ---
+  server.tool("vsphere_get_disk", "Get details of a specific disk", {
+    vm_id: z.string().describe("VM identifier"),
+    disk_id: z.string().describe("Disk identifier"),
+  }, async (params) => {
+    return client.getDisk(params.vm_id, params.disk_id);
+  });
+
+  server.tool("vsphere_update_disk", "Resize/expand a disk", {
+    vm_id: z.string().describe("VM identifier"),
+    disk_id: z.string().describe("Disk identifier"),
+    capacity_GiB: z.number().describe("New capacity in GiB (can only grow)"),
+  }, async (params) => {
+    return client.updateDisk(params.vm_id, params.disk_id, params.capacity_GiB);
+  });
+
+  server.tool("vsphere_get_nic", "Get details of a specific NIC", {
+    vm_id: z.string().describe("VM identifier"),
+    nic_id: z.string().describe("NIC identifier"),
+  }, async (params) => {
+    return client.getNic(params.vm_id, params.nic_id);
+  });
+
+  server.tool("vsphere_update_nic", "Update NIC configuration (change network, etc.)", {
+    vm_id: z.string().describe("VM identifier"),
+    nic_id: z.string().describe("NIC identifier"),
+    network: z.string().optional().describe("New network ID"),
+    start_connected: z.boolean().optional().describe("Connect on power on"),
+    allow_guest_control: z.boolean().optional().describe("Allow guest control"),
+  }, async (params) => {
+    const { vm_id, nic_id, ...rest } = params;
+    return client.updateNic(vm_id, nic_id, rest);
+  });
+
+  server.tool("vsphere_connect_nic", "Connect a NIC (hot-plug)", {
+    vm_id: z.string().describe("VM identifier"),
+    nic_id: z.string().describe("NIC identifier"),
+  }, async (params) => {
+    return client.connectNic(params.vm_id, params.nic_id);
+  });
+
+  server.tool("vsphere_disconnect_nic", "Disconnect a NIC (hot-unplug)", {
+    vm_id: z.string().describe("VM identifier"),
+    nic_id: z.string().describe("NIC identifier"),
+  }, async (params) => {
+    return client.disconnectNic(params.vm_id, params.nic_id);
+  });
+
+  // --- CD-ROM CRUD ---
+  server.tool("vsphere_get_cdrom", "Get CD-ROM device details", {
+    vm_id: z.string().describe("VM identifier"),
+    cdrom_id: z.string().describe("CD-ROM identifier"),
+  }, async (params) => {
+    return client.getCdrom(params.vm_id, params.cdrom_id);
+  });
+
+  server.tool("vsphere_add_cdrom", "Add a CD-ROM drive to a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    iso_path: z.string().optional().describe("Datastore path to ISO file"),
+    start_connected: z.boolean().optional().describe("Connect on power on"),
+  }, async (params) => {
+    const { vm_id, ...rest } = params;
+    return client.addCdrom(vm_id, rest);
+  });
+
+  server.tool("vsphere_remove_cdrom", "Remove a CD-ROM drive from a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    cdrom_id: z.string().describe("CD-ROM identifier"),
+  }, async (params) => {
+    return client.removeCdrom(params.vm_id, params.cdrom_id);
+  });
+
+  server.tool("vsphere_update_cdrom", "Update CD-ROM (mount/unmount ISO)", {
+    vm_id: z.string().describe("VM identifier"),
+    cdrom_id: z.string().describe("CD-ROM identifier"),
+    iso_path: z.string().optional().describe("ISO path (null to eject)"),
+    start_connected: z.boolean().optional().describe("Connect on power on"),
+    allow_guest_control: z.boolean().optional().describe("Allow guest control"),
+  }, async (params) => {
+    const { vm_id, cdrom_id, ...rest } = params;
+    return client.updateCdrom(vm_id, cdrom_id, rest);
+  });
+
+  server.tool("vsphere_connect_cdrom", "Connect a CD-ROM device", {
+    vm_id: z.string().describe("VM identifier"),
+    cdrom_id: z.string().describe("CD-ROM identifier"),
+  }, async (params) => {
+    return client.connectCdrom(params.vm_id, params.cdrom_id);
+  });
+
+  server.tool("vsphere_disconnect_cdrom", "Disconnect a CD-ROM device", {
+    vm_id: z.string().describe("VM identifier"),
+    cdrom_id: z.string().describe("CD-ROM identifier"),
+  }, async (params) => {
+    return client.disconnectCdrom(params.vm_id, params.cdrom_id);
+  });
+
+  // --- SCSI/SATA Adapter CRUD ---
+  server.tool("vsphere_add_scsi_adapter", "Add a SCSI adapter to a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    type: z.enum(["BUSLOGIC", "LSILOGIC", "LSILOGICSAS", "PVSCSI"]).optional().describe("SCSI adapter type"),
+  }, async (params) => {
+    return client.addScsiAdapter(params.vm_id, params.type);
+  });
+
+  server.tool("vsphere_remove_scsi_adapter", "Remove a SCSI adapter from a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    adapter_id: z.string().describe("SCSI adapter identifier"),
+  }, async (params) => {
+    return client.removeScsiAdapter(params.vm_id, params.adapter_id);
+  });
+
+  server.tool("vsphere_add_sata_adapter", "Add a SATA adapter to a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.addSataAdapter(params.vm_id);
+  });
+
+  server.tool("vsphere_remove_sata_adapter", "Remove a SATA adapter from a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    adapter_id: z.string().describe("SATA adapter identifier"),
+  }, async (params) => {
+    return client.removeSataAdapter(params.vm_id, params.adapter_id);
+  });
+
+  // --- Guest Operations ---
+  server.tool("vsphere_guest_run_program", "Run a program inside the guest OS", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+    path: z.string().describe("Path to executable in guest"),
+    arguments: z.string().optional().describe("Program arguments"),
+    working_directory: z.string().optional().describe("Working directory in guest"),
+  }, async (params) => {
+    return client.guestRunProgram(params.vm_id, params);
+  });
+
+  server.tool("vsphere_guest_get_process", "Get info about a guest process by PID", {
+    vm_id: z.string().describe("VM identifier"),
+    pid: z.number().describe("Process ID in guest"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+  }, async (params) => {
+    return client.guestGetProcess(params.vm_id, params.pid, params.username, params.password);
+  });
+
+  server.tool("vsphere_guest_list_processes", "List running processes in guest OS", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+  }, async (params) => {
+    return client.guestListProcesses(params.vm_id, params.username, params.password);
+  });
+
+  server.tool("vsphere_guest_get_environment_variables", "Get guest OS environment variables", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+    names: z.array(z.string()).optional().describe("Specific variable names to get"),
+  }, async (params) => {
+    return client.guestGetEnvironmentVariables(params.vm_id, params.username, params.password, params.names);
+  });
+
+  // --- Guest Customization ---
+  server.tool("vsphere_list_customization_specs", "List guest customization specifications", {}, async () => {
+    return client.listGuestCustomizationSpecs();
+  });
+
+  server.tool("vsphere_get_customization_spec", "Get a guest customization spec by name", {
+    spec_name: z.string().describe("Customization spec name"),
+  }, async (params) => {
+    return client.getGuestCustomizationSpec(params.spec_name);
+  });
+
+  // --- Storage Policies ---
+  server.tool("vsphere_list_storage_policies", "List all storage policies", {}, async () => {
+    return client.listStoragePolicies();
+  });
+
+  server.tool("vsphere_get_storage_policy_compliance", "Check VM storage policy compliance", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getStoragePolicyCompliance(params.vm_id);
+  });
+
+  // --- Host Connection ---
+  server.tool("vsphere_connect_host", "Connect an ESXi host to vCenter", {
+    host_id: z.string().describe("Host identifier"),
+  }, async (params) => {
+    return client.connectHost(params.host_id);
+  });
+
+  server.tool("vsphere_disconnect_host", "Disconnect an ESXi host from vCenter", {
+    host_id: z.string().describe("Host identifier"),
+  }, async (params) => {
+    return client.disconnectHost(params.host_id);
+  });
+
+  // --- Distributed Switches ---
+  server.tool("vsphere_list_distributed_switches", "List distributed virtual switches", {}, async () => {
+    return client.listDistributedSwitches();
+  });
+
+  server.tool("vsphere_list_distributed_portgroups", "List distributed port groups", {}, async () => {
+    return client.listDistributedPortgroups();
+  });
+
+  // --- Certificates ---
+  server.tool("vsphere_list_tls_certificates", "List vCenter TLS certificates", {}, async () => {
+    return client.listTlsCertificates();
+  });
+
+  server.tool("vsphere_get_trusted_root_chains", "Get trusted root certificate chains", {}, async () => {
+    return client.getTrustedRootChains();
+  });
+
+  // --- vCenter Services ---
+  server.tool("vsphere_list_services", "List all vCenter services", {}, async () => {
+    return client.listVcenterServices();
+  });
+
+  server.tool("vsphere_get_service", "Get details of a vCenter service", {
+    service_id: z.string().describe("Service identifier"),
+  }, async (params) => {
+    return client.getVcenterService(params.service_id);
+  });
+
+  server.tool("vsphere_start_service", "Start a vCenter service", {
+    service_id: z.string().describe("Service identifier"),
+  }, async (params) => {
+    return client.startVcenterService(params.service_id);
+  });
+
+  server.tool("vsphere_stop_service", "Stop a vCenter service", {
+    service_id: z.string().describe("Service identifier"),
+  }, async (params) => {
+    return client.stopVcenterService(params.service_id);
+  });
+
+  server.tool("vsphere_restart_service", "Restart a vCenter service", {
+    service_id: z.string().describe("Service identifier"),
+  }, async (params) => {
+    return client.restartVcenterService(params.service_id);
+  });
+
+  // --- Appliance Management ---
+  server.tool("vsphere_get_appliance_health", "Get vCenter appliance overall health", {}, async () => {
+    return client.getApplianceHealth();
+  });
+
+  server.tool("vsphere_get_appliance_version", "Get vCenter appliance version info", {}, async () => {
+    return client.getApplianceVersion();
+  });
+
+  server.tool("vsphere_get_appliance_networking", "Get vCenter appliance network config", {}, async () => {
+    return client.getApplianceNetworking();
+  });
+
+  server.tool("vsphere_get_appliance_network_interfaces", "Get vCenter appliance network interfaces", {}, async () => {
+    return client.getApplianceNetworkInterfaces();
+  });
+
+  server.tool("vsphere_get_appliance_storage", "Get vCenter appliance storage usage", {}, async () => {
+    return client.getApplianceStorage();
+  });
+
+  server.tool("vsphere_get_appliance_uptime", "Get vCenter appliance uptime", {}, async () => {
+    return client.getApplianceUptime();
+  });
+
+  server.tool("vsphere_get_appliance_health_memory", "Get vCenter memory health status", {}, async () => {
+    return client.getApplianceHealthMemory();
+  });
+
+  server.tool("vsphere_get_appliance_health_cpu", "Get vCenter CPU load health", {}, async () => {
+    return client.getApplianceHealthCpu();
+  });
+
+  server.tool("vsphere_get_appliance_health_database", "Get vCenter database storage health", {}, async () => {
+    return client.getApplianceHealthDatabase();
+  });
+
+  server.tool("vsphere_get_appliance_health_software", "Get vCenter software packages health", {}, async () => {
+    return client.getApplianceHealthSoftwarePackages();
+  });
 }

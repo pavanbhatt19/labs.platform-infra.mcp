@@ -1015,4 +1015,594 @@ export class VsphereClient {
       return toolError(`Failed to instant clone VM: ${error.message}`);
     }
   }
+
+  // --- VM Hardware: CPU/Memory details ---
+  async getVmCpu(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/cpu`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get VM CPU: ${error.message}`);
+    }
+  }
+
+  async updateVmCpu(vmId: string, params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {};
+      if (params.count !== undefined) spec.count = params.count;
+      if (params.cores_per_socket !== undefined) spec.cores_per_socket = params.cores_per_socket;
+      if (params.hot_add_enabled !== undefined) spec.hot_add_enabled = params.hot_add_enabled;
+      if (params.hot_remove_enabled !== undefined) spec.hot_remove_enabled = params.hot_remove_enabled;
+      await http.patch(`/vcenter/vm/${vmId}/hardware/cpu`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "updated", vm_id: vmId });
+    } catch (error: any) {
+      return toolError(`Failed to update VM CPU: ${error.message}`);
+    }
+  }
+
+  async getVmMemory(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/memory`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get VM memory: ${error.message}`);
+    }
+  }
+
+  async updateVmMemory(vmId: string, params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {};
+      if (params.size_MiB !== undefined) spec.size_MiB = params.size_MiB;
+      if (params.hot_add_enabled !== undefined) spec.hot_add_enabled = params.hot_add_enabled;
+      await http.patch(`/vcenter/vm/${vmId}/hardware/memory`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "updated", vm_id: vmId });
+    } catch (error: any) {
+      return toolError(`Failed to update VM memory: ${error.message}`);
+    }
+  }
+
+  // --- VM Hardware: Individual device get/update ---
+  async getDisk(vmId: string, diskId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/disk/${diskId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get disk: ${error.message}`);
+    }
+  }
+
+  async updateDisk(vmId: string, diskId: string, capacityGiB: number) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.patch(`/vcenter/vm/${vmId}/hardware/disk/${diskId}`, {
+        capacity: capacityGiB * 1024 * 1024 * 1024,
+      }, { headers: this.getHeaders() });
+      return toolResult({ status: "updated", vm_id: vmId, disk_id: diskId });
+    } catch (error: any) {
+      return toolError(`Failed to update disk: ${error.message}`);
+    }
+  }
+
+  async getNic(vmId: string, nicId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/ethernet/${nicId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get NIC: ${error.message}`);
+    }
+  }
+
+  async updateNic(vmId: string, nicId: string, params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {};
+      if (params.network) spec.backing = { type: "STANDARD_PORTGROUP", network: params.network };
+      if (params.start_connected !== undefined) spec.start_connected = params.start_connected;
+      if (params.allow_guest_control !== undefined) spec.allow_guest_control = params.allow_guest_control;
+      await http.patch(`/vcenter/vm/${vmId}/hardware/ethernet/${nicId}`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "updated", vm_id: vmId, nic_id: nicId });
+    } catch (error: any) {
+      return toolError(`Failed to update NIC: ${error.message}`);
+    }
+  }
+
+  async connectNic(vmId: string, nicId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}/hardware/ethernet/${nicId}?action=connect`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "connected", vm_id: vmId, nic_id: nicId });
+    } catch (error: any) {
+      return toolError(`Failed to connect NIC: ${error.message}`);
+    }
+  }
+
+  async disconnectNic(vmId: string, nicId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}/hardware/ethernet/${nicId}?action=disconnect`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "disconnected", vm_id: vmId, nic_id: nicId });
+    } catch (error: any) {
+      return toolError(`Failed to disconnect NIC: ${error.message}`);
+    }
+  }
+
+  // --- CD-ROM operations ---
+  async getCdrom(vmId: string, cdromId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/cdrom/${cdromId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get CD-ROM: ${error.message}`);
+    }
+  }
+
+  async addCdrom(vmId: string, params?: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {};
+      if (params?.iso_path) {
+        spec.backing = { type: "ISO_FILE", iso_file: params.iso_path };
+      }
+      if (params?.start_connected !== undefined) spec.start_connected = params.start_connected;
+      const response = await http.post(`/vcenter/vm/${vmId}/hardware/cdrom`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to add CD-ROM: ${error.message}`);
+    }
+  }
+
+  async removeCdrom(vmId: string, cdromId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/vcenter/vm/${vmId}/hardware/cdrom/${cdromId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "removed", vm_id: vmId, cdrom_id: cdromId });
+    } catch (error: any) {
+      return toolError(`Failed to remove CD-ROM: ${error.message}`);
+    }
+  }
+
+  async updateCdrom(vmId: string, cdromId: string, params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {};
+      if (params.iso_path) spec.backing = { type: "ISO_FILE", iso_file: params.iso_path };
+      if (params.start_connected !== undefined) spec.start_connected = params.start_connected;
+      if (params.allow_guest_control !== undefined) spec.allow_guest_control = params.allow_guest_control;
+      await http.patch(`/vcenter/vm/${vmId}/hardware/cdrom/${cdromId}`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "updated", vm_id: vmId, cdrom_id: cdromId });
+    } catch (error: any) {
+      return toolError(`Failed to update CD-ROM: ${error.message}`);
+    }
+  }
+
+  async connectCdrom(vmId: string, cdromId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}/hardware/cdrom/${cdromId}?action=connect`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "connected", vm_id: vmId, cdrom_id: cdromId });
+    } catch (error: any) {
+      return toolError(`Failed to connect CD-ROM: ${error.message}`);
+    }
+  }
+
+  async disconnectCdrom(vmId: string, cdromId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}/hardware/cdrom/${cdromId}?action=disconnect`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "disconnected", vm_id: vmId, cdrom_id: cdromId });
+    } catch (error: any) {
+      return toolError(`Failed to disconnect CD-ROM: ${error.message}`);
+    }
+  }
+
+  // --- SCSI/SATA Adapter CRUD ---
+  async addScsiAdapter(vmId: string, type?: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {};
+      if (type) spec.type = type; // BUSLOGIC, LSILOGIC, LSILOGICSAS, PVSCSI
+      const response = await http.post(`/vcenter/vm/${vmId}/hardware/adapter/scsi`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to add SCSI adapter: ${error.message}`);
+    }
+  }
+
+  async removeScsiAdapter(vmId: string, adapterId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/vcenter/vm/${vmId}/hardware/adapter/scsi/${adapterId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "removed", vm_id: vmId, adapter_id: adapterId });
+    } catch (error: any) {
+      return toolError(`Failed to remove SCSI adapter: ${error.message}`);
+    }
+  }
+
+  async addSataAdapter(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.post(`/vcenter/vm/${vmId}/hardware/adapter/sata`, {}, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to add SATA adapter: ${error.message}`);
+    }
+  }
+
+  async removeSataAdapter(vmId: string, adapterId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/vcenter/vm/${vmId}/hardware/adapter/sata/${adapterId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "removed", vm_id: vmId, adapter_id: adapterId });
+    } catch (error: any) {
+      return toolError(`Failed to remove SATA adapter: ${error.message}`);
+    }
+  }
+
+  // --- Guest Operations: Run program, File transfer ---
+  async guestRunProgram(vmId: string, params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = {
+        credentials: { type: "USERNAME_PASSWORD", user_name: params.username, password: params.password },
+        path: params.path,
+        arguments: params.arguments || "",
+        working_directory: params.working_directory || "",
+      };
+      const response = await http.post(`/vcenter/vm/${vmId}/guest/processes?action=create`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to run program in guest: ${error.message}`);
+    }
+  }
+
+  async guestGetProcess(vmId: string, pid: number, username: string, password: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.post(`/vcenter/vm/${vmId}/guest/processes/${pid}?action=get`, {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+      }, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get guest process: ${error.message}`);
+    }
+  }
+
+  async guestListProcesses(vmId: string, username: string, password: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.post(`/vcenter/vm/${vmId}/guest/processes?action=list`, {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+      }, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list guest processes: ${error.message}`);
+    }
+  }
+
+  async guestGetEnvironmentVariables(vmId: string, username: string, password: string, names?: string[]) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.post(`/vcenter/vm/${vmId}/guest/environment?action=list`, {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+        names: names || [],
+      }, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get guest env vars: ${error.message}`);
+    }
+  }
+
+  // --- Guest Customization ---
+  async listGuestCustomizationSpecs() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/guest/customization-specs", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list customization specs: ${error.message}`);
+    }
+  }
+
+  async getGuestCustomizationSpec(specName: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/guest/customization-specs/${specName}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get customization spec: ${error.message}`);
+    }
+  }
+
+  // --- Storage Policies ---
+  async listStoragePolicies() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/storage/policies", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list storage policies: ${error.message}`);
+    }
+  }
+
+  async getStoragePolicyCompliance(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/storage/policy/compliance`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get storage compliance: ${error.message}`);
+    }
+  }
+
+  // --- Host: Connection, Storage ---
+  async connectHost(hostId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/host/${hostId}?action=connect`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "connected", host_id: hostId });
+    } catch (error: any) {
+      return toolError(`Failed to connect host: ${error.message}`);
+    }
+  }
+
+  async disconnectHost(hostId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/host/${hostId}?action=disconnect`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "disconnected", host_id: hostId });
+    } catch (error: any) {
+      return toolError(`Failed to disconnect host: ${error.message}`);
+    }
+  }
+
+  // --- Distributed Switches ---
+  async listDistributedSwitches() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/network/distributed-switches", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      // May not be available in all editions
+      return toolError(`Failed to list distributed switches: ${error.message}`);
+    }
+  }
+
+  async listDistributedPortgroups() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/network/distributed-port-groups", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list distributed portgroups: ${error.message}`);
+    }
+  }
+
+  // --- Certificates ---
+  async listTlsCertificates() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/certificate-management/vcenter/tls", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list TLS certificates: ${error.message}`);
+    }
+  }
+
+  async getTrustedRootChains() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/certificate-management/vcenter/trusted-root-chains", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get trusted root chains: ${error.message}`);
+    }
+  }
+
+  // --- vCenter Services ---
+  async listVcenterServices() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/services", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list vCenter services: ${error.message}`);
+    }
+  }
+
+  async getVcenterService(serviceId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/services/${serviceId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get service: ${error.message}`);
+    }
+  }
+
+  async startVcenterService(serviceId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/services/${serviceId}?action=start`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "started", service_id: serviceId });
+    } catch (error: any) {
+      return toolError(`Failed to start service: ${error.message}`);
+    }
+  }
+
+  async stopVcenterService(serviceId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/services/${serviceId}?action=stop`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "stopped", service_id: serviceId });
+    } catch (error: any) {
+      return toolError(`Failed to stop service: ${error.message}`);
+    }
+  }
+
+  async restartVcenterService(serviceId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/services/${serviceId}?action=restart`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "restarted", service_id: serviceId });
+    } catch (error: any) {
+      return toolError(`Failed to restart service: ${error.message}`);
+    }
+  }
+
+  // --- Appliance Management ---
+  async getApplianceHealth() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/health/system", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get appliance health: ${error.message}`);
+    }
+  }
+
+  async getApplianceVersion() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/system/version", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get appliance version: ${error.message}`);
+    }
+  }
+
+  async getApplianceNetworking() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/networking", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get appliance networking: ${error.message}`);
+    }
+  }
+
+  async getApplianceNetworkInterfaces() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/networking/interfaces", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get appliance interfaces: ${error.message}`);
+    }
+  }
+
+  async getApplianceStorage() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/system/storage", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get appliance storage: ${error.message}`);
+    }
+  }
+
+  async getApplianceUptime() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/system/uptime", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get appliance uptime: ${error.message}`);
+    }
+  }
+
+  async getApplianceHealthMemory() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/health/mem", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get memory health: ${error.message}`);
+    }
+  }
+
+  async getApplianceHealthCpu() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/health/load", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get CPU health: ${error.message}`);
+    }
+  }
+
+  async getApplianceHealthDatabase() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/health/database-storage", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get database health: ${error.message}`);
+    }
+  }
+
+  async getApplianceHealthSoftwarePackages() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/health/software-packages", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get software packages health: ${error.message}`);
+    }
+  }
 }
