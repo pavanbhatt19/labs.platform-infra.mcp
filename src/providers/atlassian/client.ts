@@ -484,4 +484,696 @@ export class AtlassianClient {
       return toolError(`Failed to get attachments: ${error.message}`);
     }
   }
+
+  // =========================================================================
+  // JIRA: Metadata & Config
+  // =========================================================================
+
+  async jiraGetIssueTypes(projectKey?: string) {
+    try {
+      if (projectKey) {
+        const response = await this.http.get(`/rest/api/3/project/${projectKey}/statuses`);
+        return toolResult(response.data);
+      }
+      const response = await this.http.get("/rest/api/3/issuetype");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get issue types: ${error.message}`);
+    }
+  }
+
+  async jiraGetPriorities() {
+    try {
+      const response = await this.http.get("/rest/api/3/priority");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get priorities: ${error.message}`);
+    }
+  }
+
+  async jiraGetStatuses() {
+    try {
+      const response = await this.http.get("/rest/api/3/status");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get statuses: ${error.message}`);
+    }
+  }
+
+  async jiraGetResolutions() {
+    try {
+      const response = await this.http.get("/rest/api/3/resolution");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get resolutions: ${error.message}`);
+    }
+  }
+
+  async jiraGetFields() {
+    try {
+      const response = await this.http.get("/rest/api/3/field");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get fields: ${error.message}`);
+    }
+  }
+
+  async jiraGetServerInfo() {
+    try {
+      const response = await this.http.get("/rest/api/3/serverInfo");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get server info: ${error.message}`);
+    }
+  }
+
+  async jiraGetMyself() {
+    try {
+      const response = await this.http.get("/rest/api/3/myself");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get myself: ${error.message}`);
+    }
+  }
+
+  async jiraGetUser(accountId: string) {
+    try {
+      const response = await this.http.get("/rest/api/3/user", { params: { accountId } });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get user: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Issue Extended
+  // =========================================================================
+
+  async jiraGetIssueChangelog(issueKey: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/issue/${issueKey}/changelog`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get changelog: ${error.message}`);
+    }
+  }
+
+  async jiraGetIssueEditMeta(issueKey: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/issue/${issueKey}/editmeta`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get edit meta: ${error.message}`);
+    }
+  }
+
+  async jiraUpdateComment(issueKey: string, commentId: string, body: string) {
+    try {
+      const payload = { body: { type: "doc", version: 1, content: [{ type: "paragraph", content: [{ type: "text", text: body }] }] } };
+      const response = await this.http.put(`/rest/api/3/issue/${issueKey}/comment/${commentId}`, payload);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to update comment: ${error.message}`);
+    }
+  }
+
+  async jiraDeleteComment(issueKey: string, commentId: string) {
+    try {
+      await this.http.delete(`/rest/api/3/issue/${issueKey}/comment/${commentId}`);
+      return toolResult({ status: "deleted", issueKey, commentId });
+    } catch (error: any) {
+      return toolError(`Failed to delete comment: ${error.message}`);
+    }
+  }
+
+  async jiraGetIssueRemoteLinks(issueKey: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/issue/${issueKey}/remotelink`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get remote links: ${error.message}`);
+    }
+  }
+
+  async jiraCreateRemoteLink(issueKey: string, url: string, title: string) {
+    try {
+      const response = await this.http.post(`/rest/api/3/issue/${issueKey}/remotelink`, {
+        object: { url, title },
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create remote link: ${error.message}`);
+    }
+  }
+
+  async jiraDeleteIssueLink(linkId: string) {
+    try {
+      await this.http.delete(`/rest/api/3/issueLink/${linkId}`);
+      return toolResult({ status: "deleted", linkId });
+    } catch (error: any) {
+      return toolError(`Failed to delete issue link: ${error.message}`);
+    }
+  }
+
+  async jiraGetIssueVotes(issueKey: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/issue/${issueKey}/votes`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get votes: ${error.message}`);
+    }
+  }
+
+  async jiraAddVote(issueKey: string) {
+    try {
+      await this.http.post(`/rest/api/3/issue/${issueKey}/votes`);
+      return toolResult({ status: "voted", issueKey });
+    } catch (error: any) {
+      return toolError(`Failed to add vote: ${error.message}`);
+    }
+  }
+
+  async jiraRemoveVote(issueKey: string) {
+    try {
+      await this.http.delete(`/rest/api/3/issue/${issueKey}/votes`);
+      return toolResult({ status: "vote_removed", issueKey });
+    } catch (error: any) {
+      return toolError(`Failed to remove vote: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Attachments
+  // =========================================================================
+
+  async jiraGetIssueAttachments(issueKey: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/issue/${issueKey}`, { params: { fields: "attachment" } });
+      return toolResult(response.data.fields?.attachment || []);
+    } catch (error: any) {
+      return toolError(`Failed to get attachments: ${error.message}`);
+    }
+  }
+
+  async jiraGetAttachment(attachmentId: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/attachment/${attachmentId}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get attachment: ${error.message}`);
+    }
+  }
+
+  async jiraDeleteAttachment(attachmentId: string) {
+    try {
+      await this.http.delete(`/rest/api/3/attachment/${attachmentId}`);
+      return toolResult({ status: "deleted", attachmentId });
+    } catch (error: any) {
+      return toolError(`Failed to delete attachment: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Versions/Releases CRUD
+  // =========================================================================
+
+  async jiraCreateVersion(params: Record<string, any>) {
+    try {
+      const response = await this.http.post("/rest/api/3/version", {
+        name: params.name,
+        projectId: params.projectId,
+        description: params.description,
+        releaseDate: params.releaseDate,
+        startDate: params.startDate,
+        released: params.released || false,
+        archived: params.archived || false,
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create version: ${error.message}`);
+    }
+  }
+
+  async jiraUpdateVersion(versionId: string, params: Record<string, any>) {
+    try {
+      const response = await this.http.put(`/rest/api/3/version/${versionId}`, params);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to update version: ${error.message}`);
+    }
+  }
+
+  async jiraDeleteVersion(versionId: string) {
+    try {
+      await this.http.delete(`/rest/api/3/version/${versionId}`);
+      return toolResult({ status: "deleted", versionId });
+    } catch (error: any) {
+      return toolError(`Failed to delete version: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Components CRUD
+  // =========================================================================
+
+  async jiraCreateComponent(params: Record<string, any>) {
+    try {
+      const response = await this.http.post("/rest/api/3/component", {
+        name: params.name,
+        project: params.projectKey,
+        description: params.description,
+        leadAccountId: params.leadAccountId,
+        assigneeType: params.assigneeType || "PROJECT_DEFAULT",
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create component: ${error.message}`);
+    }
+  }
+
+  async jiraUpdateComponent(componentId: string, params: Record<string, any>) {
+    try {
+      const response = await this.http.put(`/rest/api/3/component/${componentId}`, params);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to update component: ${error.message}`);
+    }
+  }
+
+  async jiraDeleteComponent(componentId: string) {
+    try {
+      await this.http.delete(`/rest/api/3/component/${componentId}`);
+      return toolResult({ status: "deleted", componentId });
+    } catch (error: any) {
+      return toolError(`Failed to delete component: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Boards Extended
+  // =========================================================================
+
+  async jiraGetBoard(boardId: number) {
+    try {
+      const response = await this.http.get(`/rest/agile/1.0/board/${boardId}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get board: ${error.message}`);
+    }
+  }
+
+  async jiraGetBoardBacklog(boardId: number) {
+    try {
+      const response = await this.http.get(`/rest/agile/1.0/board/${boardId}/backlog`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get backlog: ${error.message}`);
+    }
+  }
+
+  async jiraGetBoardConfiguration(boardId: number) {
+    try {
+      const response = await this.http.get(`/rest/agile/1.0/board/${boardId}/configuration`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get board config: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Sprints CRUD
+  // =========================================================================
+
+  async jiraCreateSprint(params: Record<string, any>) {
+    try {
+      const response = await this.http.post("/rest/agile/1.0/sprint", {
+        name: params.name,
+        originBoardId: params.boardId,
+        startDate: params.startDate,
+        endDate: params.endDate,
+        goal: params.goal,
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create sprint: ${error.message}`);
+    }
+  }
+
+  async jiraGetSprint(sprintId: number) {
+    try {
+      const response = await this.http.get(`/rest/agile/1.0/sprint/${sprintId}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get sprint: ${error.message}`);
+    }
+  }
+
+  async jiraUpdateSprint(sprintId: number, params: Record<string, any>) {
+    try {
+      const response = await this.http.put(`/rest/agile/1.0/sprint/${sprintId}`, params);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to update sprint: ${error.message}`);
+    }
+  }
+
+  async jiraDeleteSprint(sprintId: number) {
+    try {
+      await this.http.delete(`/rest/agile/1.0/sprint/${sprintId}`);
+      return toolResult({ status: "deleted", sprintId });
+    } catch (error: any) {
+      return toolError(`Failed to delete sprint: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Epics
+  // =========================================================================
+
+  async jiraGetEpic(epicIdOrKey: string) {
+    try {
+      const response = await this.http.get(`/rest/agile/1.0/epic/${epicIdOrKey}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get epic: ${error.message}`);
+    }
+  }
+
+  async jiraGetEpicIssues(epicIdOrKey: string) {
+    try {
+      const response = await this.http.get(`/rest/agile/1.0/epic/${epicIdOrKey}/issue`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get epic issues: ${error.message}`);
+    }
+  }
+
+  async jiraMoveToEpic(epicIdOrKey: string, issueKeys: string[]) {
+    try {
+      await this.http.post(`/rest/agile/1.0/epic/${epicIdOrKey}/issue`, { issues: issueKeys });
+      return toolResult({ status: "moved", epicIdOrKey, issueKeys });
+    } catch (error: any) {
+      return toolError(`Failed to move to epic: ${error.message}`);
+    }
+  }
+
+  async jiraRemoveFromEpic(issueKeys: string[]) {
+    try {
+      await this.http.post("/rest/agile/1.0/epic/none/issue", { issues: issueKeys });
+      return toolResult({ status: "removed_from_epic", issueKeys });
+    } catch (error: any) {
+      return toolError(`Failed to remove from epic: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Filters
+  // =========================================================================
+
+  async jiraGetMyFilters() {
+    try {
+      const response = await this.http.get("/rest/api/3/filter/my");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get my filters: ${error.message}`);
+    }
+  }
+
+  async jiraGetFilter(filterId: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/filter/${filterId}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get filter: ${error.message}`);
+    }
+  }
+
+  async jiraCreateFilter(params: Record<string, any>) {
+    try {
+      const response = await this.http.post("/rest/api/3/filter", {
+        name: params.name,
+        jql: params.jql,
+        description: params.description,
+        favourite: params.favourite || false,
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create filter: ${error.message}`);
+    }
+  }
+
+  async jiraUpdateFilter(filterId: string, params: Record<string, any>) {
+    try {
+      const response = await this.http.put(`/rest/api/3/filter/${filterId}`, params);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to update filter: ${error.message}`);
+    }
+  }
+
+  async jiraDeleteFilter(filterId: string) {
+    try {
+      await this.http.delete(`/rest/api/3/filter/${filterId}`);
+      return toolResult({ status: "deleted", filterId });
+    } catch (error: any) {
+      return toolError(`Failed to delete filter: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Dashboards
+  // =========================================================================
+
+  async jiraGetDashboards() {
+    try {
+      const response = await this.http.get("/rest/api/3/dashboard");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get dashboards: ${error.message}`);
+    }
+  }
+
+  async jiraGetDashboard(dashboardId: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/dashboard/${dashboardId}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get dashboard: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Project Roles & Permissions
+  // =========================================================================
+
+  async jiraGetProjectRoles(projectKey: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/project/${projectKey}/role`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get project roles: ${error.message}`);
+    }
+  }
+
+  async jiraGetProjectRole(projectKey: string, roleId: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/project/${projectKey}/role/${roleId}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get project role: ${error.message}`);
+    }
+  }
+
+  async jiraGetPermissionScheme(projectKey: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/project/${projectKey}/permissionscheme`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get permission scheme: ${error.message}`);
+    }
+  }
+
+  async jiraGetNotificationScheme(projectKey: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/project/${projectKey}/notificationscheme`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get notification scheme: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Ranking
+  // =========================================================================
+
+  async jiraRankIssues(params: Record<string, any>) {
+    try {
+      const body: Record<string, any> = { issues: params.issueKeys };
+      if (params.rankBeforeIssue) body.rankBeforeIssue = params.rankBeforeIssue;
+      if (params.rankAfterIssue) body.rankAfterIssue = params.rankAfterIssue;
+      await this.http.put("/rest/agile/1.0/issue/rank", body);
+      return toolResult({ status: "ranked", issues: params.issueKeys });
+    } catch (error: any) {
+      return toolError(`Failed to rank issues: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Bulk Create
+  // =========================================================================
+
+  async jiraBulkCreateIssues(issues: Record<string, any>[]) {
+    try {
+      const response = await this.http.post("/rest/api/3/issue/bulk", { issueUpdates: issues });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to bulk create issues: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // CONFLUENCE: Extended
+  // =========================================================================
+
+  async confluenceGetSpace(spaceKey: string) {
+    try {
+      const response = await this.http.get(`/wiki/rest/api/space/${spaceKey}`, {
+        params: { expand: "description.plain,homepage" },
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get space: ${error.message}`);
+    }
+  }
+
+  async confluenceCreateSpace(params: Record<string, any>) {
+    try {
+      const response = await this.http.post("/wiki/rest/api/space", {
+        key: params.key,
+        name: params.name,
+        description: { plain: { value: params.description || "", representation: "plain" } },
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create space: ${error.message}`);
+    }
+  }
+
+  async confluenceDeleteSpace(spaceKey: string) {
+    try {
+      await this.http.delete(`/wiki/rest/api/space/${spaceKey}`);
+      return toolResult({ status: "deleted", spaceKey });
+    } catch (error: any) {
+      return toolError(`Failed to delete space: ${error.message}`);
+    }
+  }
+
+  async confluenceGetPageByTitle(spaceKey: string, title: string) {
+    try {
+      const response = await this.http.get("/wiki/rest/api/content", {
+        params: { spaceKey, title, expand: "body.storage,version" },
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get page by title: ${error.message}`);
+    }
+  }
+
+  async confluenceGetPageVersion(pageId: string, versionNumber: number) {
+    try {
+      const response = await this.http.get(`/wiki/rest/api/content/${pageId}/version/${versionNumber}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get page version: ${error.message}`);
+    }
+  }
+
+  async confluenceGetContentProperties(pageId: string) {
+    try {
+      const response = await this.http.get(`/wiki/rest/api/content/${pageId}/property`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get content properties: ${error.message}`);
+    }
+  }
+
+  async confluenceSetContentProperty(pageId: string, key: string, value: any) {
+    try {
+      const response = await this.http.post(`/wiki/rest/api/content/${pageId}/property`, {
+        key,
+        value,
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to set content property: ${error.message}`);
+    }
+  }
+
+  async confluenceDeleteContentProperty(pageId: string, key: string) {
+    try {
+      await this.http.delete(`/wiki/rest/api/content/${pageId}/property/${key}`);
+      return toolResult({ status: "deleted", pageId, key });
+    } catch (error: any) {
+      return toolError(`Failed to delete content property: ${error.message}`);
+    }
+  }
+
+  async confluenceGetContentRestrictions(pageId: string) {
+    try {
+      const response = await this.http.get(`/wiki/rest/api/content/${pageId}/restriction`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get restrictions: ${error.message}`);
+    }
+  }
+
+  async confluenceSearchUsers(query: string, limit?: number) {
+    try {
+      const response = await this.http.get("/wiki/rest/api/search/user", {
+        params: { cql: `user.fullname~"${query}"`, limit: limit || 25 },
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to search users: ${error.message}`);
+    }
+  }
+
+  async confluenceGetTasks(pageId: string) {
+    try {
+      const response = await this.http.get(`/wiki/rest/api/content/${pageId}/descendant/comment`, {
+        params: { expand: "body.storage" },
+      });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get tasks: ${error.message}`);
+    }
+  }
+
+  async confluenceCopyPage(pageId: string, destinationSpaceKey: string, title?: string) {
+    try {
+      const body: Record<string, any> = {
+        copyAttachments: true,
+        copyLabels: true,
+        destination: { type: "space", value: destinationSpaceKey },
+      };
+      if (title) body.pageTitle = title;
+      const response = await this.http.post(`/wiki/rest/api/content/${pageId}/copy`, body);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to copy page: ${error.message}`);
+    }
+  }
+
+  async confluenceMovePage(pageId: string, targetPageId: string, position?: string) {
+    try {
+      const body = {
+        position: position || "append",
+        targetId: targetPageId,
+      };
+      const response = await this.http.put(`/wiki/rest/api/content/${pageId}/move/${position || "append"}/${targetPageId}`, body);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to move page: ${error.message}`);
+    }
+  }
 }

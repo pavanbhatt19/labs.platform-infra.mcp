@@ -304,4 +304,480 @@ export function registerAtlassianTools(server: McpServer, config: AtlassianConfi
   }, async (params) => {
     return client.confluenceGetAttachments(params.pageId);
   });
+
+  // =========================================================================
+  // JIRA: Metadata & Config
+  // =========================================================================
+
+  server.tool("jira_get_issue_types", "Get all issue types (optionally for a project)", {
+    projectKey: z.string().optional().describe("Project key to get types for"),
+  }, async (params) => {
+    return client.jiraGetIssueTypes(params.projectKey);
+  });
+
+  server.tool("jira_get_priorities", "Get all Jira priorities", {}, async () => {
+    return client.jiraGetPriorities();
+  });
+
+  server.tool("jira_get_statuses", "Get all Jira statuses", {}, async () => {
+    return client.jiraGetStatuses();
+  });
+
+  server.tool("jira_get_resolutions", "Get all Jira resolutions", {}, async () => {
+    return client.jiraGetResolutions();
+  });
+
+  server.tool("jira_get_fields", "Get all fields (system + custom)", {}, async () => {
+    return client.jiraGetFields();
+  });
+
+  server.tool("jira_get_server_info", "Get Jira server/instance info", {}, async () => {
+    return client.jiraGetServerInfo();
+  });
+
+  server.tool("jira_get_myself", "Get current authenticated user", {}, async () => {
+    return client.jiraGetMyself();
+  });
+
+  server.tool("jira_get_user", "Get a user by account ID", {
+    accountId: z.string().describe("Atlassian account ID"),
+  }, async (params) => {
+    return client.jiraGetUser(params.accountId);
+  });
+
+  // =========================================================================
+  // JIRA: Issue Extended
+  // =========================================================================
+
+  server.tool("jira_get_issue_changelog", "Get issue change history", {
+    issueKey: z.string().describe("Issue key"),
+  }, async (params) => {
+    return client.jiraGetIssueChangelog(params.issueKey);
+  });
+
+  server.tool("jira_get_issue_editmeta", "Get editable fields metadata for an issue", {
+    issueKey: z.string().describe("Issue key"),
+  }, async (params) => {
+    return client.jiraGetIssueEditMeta(params.issueKey);
+  });
+
+  server.tool("jira_update_comment", "Update an existing comment", {
+    issueKey: z.string().describe("Issue key"),
+    commentId: z.string().describe("Comment ID"),
+    body: z.string().describe("New comment text"),
+  }, async (params) => {
+    return client.jiraUpdateComment(params.issueKey, params.commentId, params.body);
+  });
+
+  server.tool("jira_delete_comment", "Delete a comment", {
+    issueKey: z.string().describe("Issue key"),
+    commentId: z.string().describe("Comment ID"),
+  }, async (params) => {
+    return client.jiraDeleteComment(params.issueKey, params.commentId);
+  });
+
+  server.tool("jira_get_issue_remote_links", "Get remote links on an issue", {
+    issueKey: z.string().describe("Issue key"),
+  }, async (params) => {
+    return client.jiraGetIssueRemoteLinks(params.issueKey);
+  });
+
+  server.tool("jira_create_remote_link", "Add a remote link to an issue", {
+    issueKey: z.string().describe("Issue key"),
+    url: z.string().describe("Link URL"),
+    title: z.string().describe("Link title"),
+  }, async (params) => {
+    return client.jiraCreateRemoteLink(params.issueKey, params.url, params.title);
+  });
+
+  server.tool("jira_delete_issue_link", "Delete a link between two issues", {
+    linkId: z.string().describe("Issue link ID"),
+  }, async (params) => {
+    return client.jiraDeleteIssueLink(params.linkId);
+  });
+
+  server.tool("jira_get_issue_votes", "Get votes on an issue", {
+    issueKey: z.string().describe("Issue key"),
+  }, async (params) => {
+    return client.jiraGetIssueVotes(params.issueKey);
+  });
+
+  server.tool("jira_add_vote", "Vote for an issue", {
+    issueKey: z.string().describe("Issue key"),
+  }, async (params) => {
+    return client.jiraAddVote(params.issueKey);
+  });
+
+  server.tool("jira_remove_vote", "Remove your vote from an issue", {
+    issueKey: z.string().describe("Issue key"),
+  }, async (params) => {
+    return client.jiraRemoveVote(params.issueKey);
+  });
+
+  // =========================================================================
+  // JIRA: Attachments
+  // =========================================================================
+
+  server.tool("jira_get_issue_attachments", "Get all attachments on an issue", {
+    issueKey: z.string().describe("Issue key"),
+  }, async (params) => {
+    return client.jiraGetIssueAttachments(params.issueKey);
+  });
+
+  server.tool("jira_get_attachment", "Get attachment metadata by ID", {
+    attachmentId: z.string().describe("Attachment ID"),
+  }, async (params) => {
+    return client.jiraGetAttachment(params.attachmentId);
+  });
+
+  server.tool("jira_delete_attachment", "Delete an attachment", {
+    attachmentId: z.string().describe("Attachment ID"),
+  }, async (params) => {
+    return client.jiraDeleteAttachment(params.attachmentId);
+  });
+
+  // =========================================================================
+  // JIRA: Versions CRUD
+  // =========================================================================
+
+  server.tool("jira_create_version", "Create a project version/release", {
+    name: z.string().describe("Version name"),
+    projectId: z.string().describe("Project ID (numeric)"),
+    description: z.string().optional().describe("Version description"),
+    releaseDate: z.string().optional().describe("Release date (YYYY-MM-DD)"),
+    startDate: z.string().optional().describe("Start date (YYYY-MM-DD)"),
+    released: z.boolean().optional().describe("Mark as released"),
+  }, async (params) => {
+    return client.jiraCreateVersion(params);
+  });
+
+  server.tool("jira_update_version", "Update a version/release", {
+    versionId: z.string().describe("Version ID"),
+    name: z.string().optional().describe("New name"),
+    description: z.string().optional().describe("New description"),
+    released: z.boolean().optional().describe("Mark as released"),
+    archived: z.boolean().optional().describe("Mark as archived"),
+    releaseDate: z.string().optional().describe("Release date"),
+  }, async (params) => {
+    const { versionId, ...rest } = params;
+    return client.jiraUpdateVersion(versionId, rest);
+  });
+
+  server.tool("jira_delete_version", "Delete a version/release", {
+    versionId: z.string().describe("Version ID"),
+  }, async (params) => {
+    return client.jiraDeleteVersion(params.versionId);
+  });
+
+  // =========================================================================
+  // JIRA: Components CRUD
+  // =========================================================================
+
+  server.tool("jira_create_component", "Create a project component", {
+    name: z.string().describe("Component name"),
+    projectKey: z.string().describe("Project key"),
+    description: z.string().optional().describe("Component description"),
+    leadAccountId: z.string().optional().describe("Component lead account ID"),
+  }, async (params) => {
+    return client.jiraCreateComponent(params);
+  });
+
+  server.tool("jira_update_component", "Update a component", {
+    componentId: z.string().describe("Component ID"),
+    name: z.string().optional().describe("New name"),
+    description: z.string().optional().describe("New description"),
+    leadAccountId: z.string().optional().describe("New lead"),
+  }, async (params) => {
+    const { componentId, ...rest } = params;
+    return client.jiraUpdateComponent(componentId, rest);
+  });
+
+  server.tool("jira_delete_component", "Delete a component", {
+    componentId: z.string().describe("Component ID"),
+  }, async (params) => {
+    return client.jiraDeleteComponent(params.componentId);
+  });
+
+  // =========================================================================
+  // JIRA: Boards Extended
+  // =========================================================================
+
+  server.tool("jira_get_board", "Get board details", {
+    boardId: z.number().describe("Board ID"),
+  }, async (params) => {
+    return client.jiraGetBoard(params.boardId);
+  });
+
+  server.tool("jira_get_board_backlog", "Get backlog issues for a board", {
+    boardId: z.number().describe("Board ID"),
+  }, async (params) => {
+    return client.jiraGetBoardBacklog(params.boardId);
+  });
+
+  server.tool("jira_get_board_configuration", "Get board configuration (columns, etc.)", {
+    boardId: z.number().describe("Board ID"),
+  }, async (params) => {
+    return client.jiraGetBoardConfiguration(params.boardId);
+  });
+
+  // =========================================================================
+  // JIRA: Sprints CRUD
+  // =========================================================================
+
+  server.tool("jira_create_sprint", "Create a new sprint", {
+    name: z.string().describe("Sprint name"),
+    boardId: z.number().describe("Origin board ID"),
+    startDate: z.string().optional().describe("Start date (ISO 8601)"),
+    endDate: z.string().optional().describe("End date (ISO 8601)"),
+    goal: z.string().optional().describe("Sprint goal"),
+  }, async (params) => {
+    return client.jiraCreateSprint(params);
+  });
+
+  server.tool("jira_get_sprint", "Get sprint details", {
+    sprintId: z.number().describe("Sprint ID"),
+  }, async (params) => {
+    return client.jiraGetSprint(params.sprintId);
+  });
+
+  server.tool("jira_update_sprint", "Update a sprint (name, dates, state)", {
+    sprintId: z.number().describe("Sprint ID"),
+    name: z.string().optional().describe("New name"),
+    state: z.enum(["active", "closed", "future"]).optional().describe("New state"),
+    startDate: z.string().optional().describe("Start date"),
+    endDate: z.string().optional().describe("End date"),
+    goal: z.string().optional().describe("Sprint goal"),
+  }, async (params) => {
+    const { sprintId, ...rest } = params;
+    return client.jiraUpdateSprint(sprintId, rest);
+  });
+
+  server.tool("jira_delete_sprint", "Delete a sprint", {
+    sprintId: z.number().describe("Sprint ID"),
+  }, async (params) => {
+    return client.jiraDeleteSprint(params.sprintId);
+  });
+
+  // =========================================================================
+  // JIRA: Epics
+  // =========================================================================
+
+  server.tool("jira_get_epic", "Get epic details", {
+    epicIdOrKey: z.string().describe("Epic ID or key"),
+  }, async (params) => {
+    return client.jiraGetEpic(params.epicIdOrKey);
+  });
+
+  server.tool("jira_get_epic_issues", "Get issues belonging to an epic", {
+    epicIdOrKey: z.string().describe("Epic ID or key"),
+  }, async (params) => {
+    return client.jiraGetEpicIssues(params.epicIdOrKey);
+  });
+
+  server.tool("jira_move_to_epic", "Move issues to an epic", {
+    epicIdOrKey: z.string().describe("Target epic ID or key"),
+    issueKeys: z.array(z.string()).describe("Issue keys to move"),
+  }, async (params) => {
+    return client.jiraMoveToEpic(params.epicIdOrKey, params.issueKeys);
+  });
+
+  server.tool("jira_remove_from_epic", "Remove issues from their epic", {
+    issueKeys: z.array(z.string()).describe("Issue keys to remove from epic"),
+  }, async (params) => {
+    return client.jiraRemoveFromEpic(params.issueKeys);
+  });
+
+  // =========================================================================
+  // JIRA: Filters
+  // =========================================================================
+
+  server.tool("jira_get_my_filters", "Get current user's saved filters", {}, async () => {
+    return client.jiraGetMyFilters();
+  });
+
+  server.tool("jira_get_filter", "Get a saved filter by ID", {
+    filterId: z.string().describe("Filter ID"),
+  }, async (params) => {
+    return client.jiraGetFilter(params.filterId);
+  });
+
+  server.tool("jira_create_filter", "Create a saved filter", {
+    name: z.string().describe("Filter name"),
+    jql: z.string().describe("JQL query"),
+    description: z.string().optional().describe("Filter description"),
+    favourite: z.boolean().optional().describe("Mark as favourite"),
+  }, async (params) => {
+    return client.jiraCreateFilter(params);
+  });
+
+  server.tool("jira_update_filter", "Update a saved filter", {
+    filterId: z.string().describe("Filter ID"),
+    name: z.string().optional().describe("New name"),
+    jql: z.string().optional().describe("New JQL"),
+    description: z.string().optional().describe("New description"),
+  }, async (params) => {
+    const { filterId, ...rest } = params;
+    return client.jiraUpdateFilter(filterId, rest);
+  });
+
+  server.tool("jira_delete_filter", "Delete a saved filter", {
+    filterId: z.string().describe("Filter ID"),
+  }, async (params) => {
+    return client.jiraDeleteFilter(params.filterId);
+  });
+
+  // =========================================================================
+  // JIRA: Dashboards
+  // =========================================================================
+
+  server.tool("jira_get_dashboards", "Get all dashboards", {}, async () => {
+    return client.jiraGetDashboards();
+  });
+
+  server.tool("jira_get_dashboard", "Get a specific dashboard", {
+    dashboardId: z.string().describe("Dashboard ID"),
+  }, async (params) => {
+    return client.jiraGetDashboard(params.dashboardId);
+  });
+
+  // =========================================================================
+  // JIRA: Project Roles & Permissions
+  // =========================================================================
+
+  server.tool("jira_get_project_roles", "Get all roles for a project", {
+    projectKey: z.string().describe("Project key"),
+  }, async (params) => {
+    return client.jiraGetProjectRoles(params.projectKey);
+  });
+
+  server.tool("jira_get_project_role", "Get members of a project role", {
+    projectKey: z.string().describe("Project key"),
+    roleId: z.string().describe("Role ID"),
+  }, async (params) => {
+    return client.jiraGetProjectRole(params.projectKey, params.roleId);
+  });
+
+  server.tool("jira_get_permission_scheme", "Get project permission scheme", {
+    projectKey: z.string().describe("Project key"),
+  }, async (params) => {
+    return client.jiraGetPermissionScheme(params.projectKey);
+  });
+
+  server.tool("jira_get_notification_scheme", "Get project notification scheme", {
+    projectKey: z.string().describe("Project key"),
+  }, async (params) => {
+    return client.jiraGetNotificationScheme(params.projectKey);
+  });
+
+  // =========================================================================
+  // JIRA: Ranking & Bulk
+  // =========================================================================
+
+  server.tool("jira_rank_issues", "Rank/reorder issues on a board", {
+    issueKeys: z.array(z.string()).describe("Issue keys to rank"),
+    rankBeforeIssue: z.string().optional().describe("Rank before this issue key"),
+    rankAfterIssue: z.string().optional().describe("Rank after this issue key"),
+  }, async (params) => {
+    return client.jiraRankIssues(params);
+  });
+
+  server.tool("jira_bulk_create_issues", "Create multiple issues in one call", {
+    issues: z.array(z.record(z.any())).describe("Array of issue creation objects (each with fields)"),
+  }, async (params) => {
+    return client.jiraBulkCreateIssues(params.issues);
+  });
+
+  // =========================================================================
+  // CONFLUENCE: Extended
+  // =========================================================================
+
+  server.tool("confluence_get_space", "Get details of a specific Confluence space", {
+    spaceKey: z.string().describe("Space key"),
+  }, async (params) => {
+    return client.confluenceGetSpace(params.spaceKey);
+  });
+
+  server.tool("confluence_create_space", "Create a new Confluence space", {
+    key: z.string().describe("Space key (uppercase, no spaces)"),
+    name: z.string().describe("Space name"),
+    description: z.string().optional().describe("Space description"),
+  }, async (params) => {
+    return client.confluenceCreateSpace(params);
+  });
+
+  server.tool("confluence_delete_space", "Delete a Confluence space", {
+    spaceKey: z.string().describe("Space key"),
+  }, async (params) => {
+    return client.confluenceDeleteSpace(params.spaceKey);
+  });
+
+  server.tool("confluence_get_page_by_title", "Find a page by title in a space", {
+    spaceKey: z.string().describe("Space key"),
+    title: z.string().describe("Page title"),
+  }, async (params) => {
+    return client.confluenceGetPageByTitle(params.spaceKey, params.title);
+  });
+
+  server.tool("confluence_get_page_version", "Get a specific version of a page", {
+    pageId: z.string().describe("Page ID"),
+    versionNumber: z.number().describe("Version number"),
+  }, async (params) => {
+    return client.confluenceGetPageVersion(params.pageId, params.versionNumber);
+  });
+
+  server.tool("confluence_get_content_properties", "Get content properties of a page", {
+    pageId: z.string().describe("Page ID"),
+  }, async (params) => {
+    return client.confluenceGetContentProperties(params.pageId);
+  });
+
+  server.tool("confluence_set_content_property", "Set a content property on a page", {
+    pageId: z.string().describe("Page ID"),
+    key: z.string().describe("Property key"),
+    value: z.any().describe("Property value (JSON)"),
+  }, async (params) => {
+    return client.confluenceSetContentProperty(params.pageId, params.key, params.value);
+  });
+
+  server.tool("confluence_delete_content_property", "Delete a content property from a page", {
+    pageId: z.string().describe("Page ID"),
+    key: z.string().describe("Property key"),
+  }, async (params) => {
+    return client.confluenceDeleteContentProperty(params.pageId, params.key);
+  });
+
+  server.tool("confluence_get_content_restrictions", "Get restrictions on a page", {
+    pageId: z.string().describe("Page ID"),
+  }, async (params) => {
+    return client.confluenceGetContentRestrictions(params.pageId);
+  });
+
+  server.tool("confluence_search_users", "Search Confluence users", {
+    query: z.string().describe("Search query (name)"),
+    limit: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.confluenceSearchUsers(params.query, params.limit);
+  });
+
+  server.tool("confluence_get_tasks", "Get inline tasks/comments on a page", {
+    pageId: z.string().describe("Page ID"),
+  }, async (params) => {
+    return client.confluenceGetTasks(params.pageId);
+  });
+
+  server.tool("confluence_copy_page", "Copy a page to another space", {
+    pageId: z.string().describe("Source page ID"),
+    destinationSpaceKey: z.string().describe("Destination space key"),
+    title: z.string().optional().describe("New page title"),
+  }, async (params) => {
+    return client.confluenceCopyPage(params.pageId, params.destinationSpaceKey, params.title);
+  });
+
+  server.tool("confluence_move_page", "Move a page under a different parent", {
+    pageId: z.string().describe("Page ID to move"),
+    targetPageId: z.string().describe("Target parent page ID"),
+    position: z.enum(["append", "before", "after"]).optional().describe("Position relative to target (default: append)"),
+  }, async (params) => {
+    return client.confluenceMovePage(params.pageId, params.targetPageId, params.position);
+  });
 }
