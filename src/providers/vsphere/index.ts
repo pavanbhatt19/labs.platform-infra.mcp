@@ -288,4 +288,252 @@ export function registerVsphereTools(server: McpServer, config: VsphereConfig) {
   }, async (params) => {
     return client.removeNic(params.vm_id, params.nic_id);
   });
+
+  // --- VM Hardware Info ---
+  server.tool("vsphere_get_vm_hardware", "Get full VM hardware summary", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getVmHardware(params.vm_id);
+  });
+
+  server.tool("vsphere_get_vm_boot", "Get VM boot configuration (BIOS/EFI, delay)", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getVmBoot(params.vm_id);
+  });
+
+  server.tool("vsphere_update_vm_boot", "Update VM boot config (type, delay, retry)", {
+    vm_id: z.string().describe("VM identifier"),
+    type: z.enum(["BIOS", "EFI"]).optional().describe("Boot firmware type"),
+    delay: z.number().optional().describe("Boot delay in ms"),
+    enter_setup_mode: z.boolean().optional().describe("Enter BIOS/EFI setup on next boot"),
+    retry: z.boolean().optional().describe("Retry boot on failure"),
+    retry_delay: z.number().optional().describe("Retry delay in ms"),
+  }, async (params) => {
+    const { vm_id, ...rest } = params;
+    return client.updateVmBoot(vm_id, rest);
+  });
+
+  server.tool("vsphere_get_vm_boot_device", "Get VM boot device order", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getVmBootDevice(params.vm_id);
+  });
+
+  // --- VM Hardware: CD/Floppy/Serial/Parallel ---
+  server.tool("vsphere_list_cdroms", "List CD-ROM drives on a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.listCdroms(params.vm_id);
+  });
+
+  server.tool("vsphere_list_floppies", "List floppy drives on a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.listFloppies(params.vm_id);
+  });
+
+  server.tool("vsphere_list_serial_ports", "List serial ports on a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.listSerialPorts(params.vm_id);
+  });
+
+  server.tool("vsphere_list_parallel_ports", "List parallel ports on a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.listParallelPorts(params.vm_id);
+  });
+
+  // --- VM Hardware: Storage Adapters ---
+  server.tool("vsphere_list_scsi_adapters", "List SCSI adapters on a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.listScsiAdapters(params.vm_id);
+  });
+
+  server.tool("vsphere_list_sata_adapters", "List SATA adapters on a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.listSataAdapters(params.vm_id);
+  });
+
+  // --- VM Guest Operations ---
+  server.tool("vsphere_get_vm_guest_power", "Get guest OS power state", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getVmGuestPower(params.vm_id);
+  });
+
+  server.tool("vsphere_vm_guest_shutdown", "Graceful guest OS shutdown (requires VMware Tools)", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.vmGuestShutdown(params.vm_id);
+  });
+
+  server.tool("vsphere_vm_guest_reboot", "Graceful guest OS reboot (requires VMware Tools)", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.vmGuestReboot(params.vm_id);
+  });
+
+  server.tool("vsphere_vm_guest_standby", "Put guest OS in standby (requires VMware Tools)", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.vmGuestStandby(params.vm_id);
+  });
+
+  server.tool("vsphere_get_vm_guest_filesystem", "Get guest local filesystem info", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getVmGuestLocalFilesystem(params.vm_id);
+  });
+
+  // --- VM Tools ---
+  server.tool("vsphere_get_vm_tools", "Get VMware Tools status and version", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getVmTools(params.vm_id);
+  });
+
+  server.tool("vsphere_upgrade_vm_tools", "Upgrade VMware Tools on a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.upgradeVmTools(params.vm_id);
+  });
+
+  // --- VM Storage Policy ---
+  server.tool("vsphere_get_vm_storage_policy", "Get VM storage policy compliance", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.getVmStoragePolicy(params.vm_id);
+  });
+
+  // --- VM Console ---
+  server.tool("vsphere_get_vm_console_ticket", "Get a console ticket (VMRC/WEBMKS) for a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    type: z.enum(["VMRC", "WEBMKS"]).optional().describe("Console type (default: VMRC)"),
+  }, async (params) => {
+    return client.getVmConsoleTicket(params.vm_id, params.type);
+  });
+
+  // --- Network/Datacenter details ---
+  server.tool("vsphere_get_network", "Get details of a specific network", {
+    network_id: z.string().describe("Network identifier"),
+  }, async (params) => {
+    return client.getNetwork(params.network_id);
+  });
+
+  server.tool("vsphere_get_datacenter", "Get details of a specific datacenter", {
+    datacenter_id: z.string().describe("Datacenter identifier"),
+  }, async (params) => {
+    return client.getDatacenter(params.datacenter_id);
+  });
+
+  // --- Tag Category CRUD ---
+  server.tool("vsphere_create_tag_category", "Create a new tag category", {
+    name: z.string().describe("Category name"),
+    description: z.string().optional().describe("Category description"),
+    cardinality: z.enum(["SINGLE", "MULTIPLE"]).optional().describe("Single or multiple tags per object (default: MULTIPLE)"),
+    associable_types: z.array(z.string()).optional().describe("Object types this category can be associated with (empty = all)"),
+  }, async (params) => {
+    return client.createTagCategory(params);
+  });
+
+  server.tool("vsphere_delete_tag_category", "Delete a tag category", {
+    category_id: z.string().describe("Category identifier"),
+  }, async (params) => {
+    return client.deleteTagCategory(params.category_id);
+  });
+
+  // --- Tag CRUD ---
+  server.tool("vsphere_create_tag", "Create a new tag in a category", {
+    name: z.string().describe("Tag name"),
+    category_id: z.string().describe("Category ID this tag belongs to"),
+    description: z.string().optional().describe("Tag description"),
+  }, async (params) => {
+    return client.createTag(params);
+  });
+
+  server.tool("vsphere_delete_tag", "Delete a tag", {
+    tag_id: z.string().describe("Tag identifier"),
+  }, async (params) => {
+    return client.deleteTag(params.tag_id);
+  });
+
+  server.tool("vsphere_list_objects_attached_to_tag", "List all objects that have a specific tag", {
+    tag_id: z.string().describe("Tag identifier"),
+  }, async (params) => {
+    return client.listObjectsAttachedToTag(params.tag_id);
+  });
+
+  // --- VM Templates ---
+  server.tool("vsphere_list_vm_templates", "List VM templates in content library", {}, async () => {
+    return client.listVmTemplates();
+  });
+
+  server.tool("vsphere_get_vm_template", "Get VM template details", {
+    template_id: z.string().describe("Template library item ID"),
+  }, async (params) => {
+    return client.getVmTemplate(params.template_id);
+  });
+
+  server.tool("vsphere_deploy_vm_template", "Deploy a VM from a template", {
+    template_id: z.string().describe("Template library item ID"),
+    name: z.string().describe("Name for the deployed VM"),
+    resource_pool: z.string().optional().describe("Resource pool ID"),
+    folder: z.string().optional().describe("Folder ID"),
+    datastore: z.string().optional().describe("Datastore ID"),
+    powered_on: z.boolean().optional().describe("Power on after deploy (default: false)"),
+  }, async (params) => {
+    return client.deployVmTemplate(params);
+  });
+
+  // --- OVF ---
+  server.tool("vsphere_filter_ovf_library_item", "Get deployment options for an OVF library item", {
+    item_id: z.string().describe("Library item ID"),
+    target_resource_pool: z.string().describe("Target resource pool ID"),
+  }, async (params) => {
+    return client.filterOvfLibraryItem(params.item_id, params.target_resource_pool);
+  });
+
+  // --- VM Relocate (vMotion) ---
+  server.tool("vsphere_relocate_vm", "Relocate/vMotion a VM to another host or datastore", {
+    vm_id: z.string().describe("VM identifier"),
+    host: z.string().optional().describe("Target host ID"),
+    resource_pool: z.string().optional().describe("Target resource pool ID"),
+    datastore: z.string().optional().describe("Target datastore ID"),
+    folder: z.string().optional().describe("Target folder ID"),
+  }, async (params) => {
+    const { vm_id, ...rest } = params;
+    return client.relocateVm(vm_id, rest);
+  });
+
+  // --- VM Register/Unregister ---
+  server.tool("vsphere_register_vm", "Register an existing VM from a datastore path", {
+    path: z.string().describe("Datastore path to the .vmx file"),
+    name: z.string().optional().describe("VM name"),
+    datastore: z.string().optional().describe("Datastore ID"),
+    folder: z.string().optional().describe("Folder ID"),
+    resource_pool: z.string().optional().describe("Resource pool ID"),
+  }, async (params) => {
+    return client.registerVm(params);
+  });
+
+  server.tool("vsphere_unregister_vm", "Unregister a VM (remove from inventory without deleting files)", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.unregisterVm(params.vm_id);
+  });
+
+  // --- VM Instant Clone ---
+  server.tool("vsphere_instant_clone_vm", "Instant clone a running VM (forkable VMs)", {
+    source_vm_id: z.string().describe("Source VM ID (must be running)"),
+    name: z.string().describe("Name for the cloned VM"),
+    resource_pool: z.string().optional().describe("Resource pool ID"),
+    folder: z.string().optional().describe("Folder ID"),
+    datastore: z.string().optional().describe("Datastore ID"),
+  }, async (params) => {
+    return client.instantCloneVm(params);
+  });
 }

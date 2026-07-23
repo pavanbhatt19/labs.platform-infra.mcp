@@ -573,4 +573,446 @@ export class VsphereClient {
       return toolError(`Failed to remove NIC: ${error.message}`);
     }
   }
+
+  // --- VM Hardware: Boot, CPU, Memory details ---
+  async getVmHardware(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get VM hardware: ${error.message}`);
+    }
+  }
+
+  async getVmBoot(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/boot`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get VM boot config: ${error.message}`);
+    }
+  }
+
+  async updateVmBoot(vmId: string, params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {};
+      if (params.type) spec.type = params.type; // BIOS or EFI
+      if (params.delay !== undefined) spec.delay = params.delay;
+      if (params.enter_setup_mode !== undefined) spec.enter_setup_mode = params.enter_setup_mode;
+      if (params.retry !== undefined) spec.retry = params.retry;
+      if (params.retry_delay !== undefined) spec.retry_delay = params.retry_delay;
+      await http.patch(`/vcenter/vm/${vmId}/hardware/boot`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "updated", vm_id: vmId });
+    } catch (error: any) {
+      return toolError(`Failed to update VM boot: ${error.message}`);
+    }
+  }
+
+  async getVmBootDevice(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/boot/device`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get boot device: ${error.message}`);
+    }
+  }
+
+  // --- VM Hardware: CD-ROM ---
+  async listCdroms(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/cdrom`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list CD-ROMs: ${error.message}`);
+    }
+  }
+
+  // --- VM Hardware: Floppy ---
+  async listFloppies(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/floppy`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list floppies: ${error.message}`);
+    }
+  }
+
+  // --- VM Hardware: Parallel/Serial ports ---
+  async listSerialPorts(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/serial`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list serial ports: ${error.message}`);
+    }
+  }
+
+  async listParallelPorts(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/parallel`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list parallel ports: ${error.message}`);
+    }
+  }
+
+  // --- VM Hardware: SCSI/SATA adapters ---
+  async listScsiAdapters(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/adapter/scsi`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list SCSI adapters: ${error.message}`);
+    }
+  }
+
+  async listSataAdapters(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/adapter/sata`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list SATA adapters: ${error.message}`);
+    }
+  }
+
+  // --- VM Guest: Power, Processes, Filesystem ---
+  async getVmGuestPower(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/guest/power`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get guest power state: ${error.message}`);
+    }
+  }
+
+  async vmGuestShutdown(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}/guest/power?action=shutdown`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "shutdown_initiated", vm_id: vmId });
+    } catch (error: any) {
+      return toolError(`Failed to guest shutdown: ${error.message}`);
+    }
+  }
+
+  async vmGuestReboot(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}/guest/power?action=reboot`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "reboot_initiated", vm_id: vmId });
+    } catch (error: any) {
+      return toolError(`Failed to guest reboot: ${error.message}`);
+    }
+  }
+
+  async vmGuestStandby(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}/guest/power?action=standby`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "standby_initiated", vm_id: vmId });
+    } catch (error: any) {
+      return toolError(`Failed to guest standby: ${error.message}`);
+    }
+  }
+
+  async getVmGuestLocalFilesystem(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/guest/local-filesystem`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get guest filesystem: ${error.message}`);
+    }
+  }
+
+  // --- VM Tools ---
+  async getVmTools(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/tools`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get VM tools status: ${error.message}`);
+    }
+  }
+
+  async upgradeVmTools(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}/tools?action=upgrade`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "upgrade_initiated", vm_id: vmId });
+    } catch (error: any) {
+      return toolError(`Failed to upgrade VM tools: ${error.message}`);
+    }
+  }
+
+  // --- VM Storage Policy ---
+  async getVmStoragePolicy(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/storage/policy`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get VM storage policy: ${error.message}`);
+    }
+  }
+
+  // --- VM Console Ticket ---
+  async getVmConsoleTicket(vmId: string, type?: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = { type: type || "VMRC" };
+      const response = await http.post(`/vcenter/vm/${vmId}/console/tickets`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get console ticket: ${error.message}`);
+    }
+  }
+
+  // --- Network details ---
+  async getNetwork(networkId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/network/${networkId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get network: ${error.message}`);
+    }
+  }
+
+  // --- Datacenter details ---
+  async getDatacenter(datacenterId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/datacenter/${datacenterId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get datacenter: ${error.message}`);
+    }
+  }
+
+  // --- Tag Category CRUD ---
+  async createTagCategory(params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = {
+        name: params.name,
+        description: params.description || "",
+        cardinality: params.cardinality || "MULTIPLE",
+        associable_types: params.associable_types || [],
+      };
+      const response = await http.post("/cis/tagging/category", spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create tag category: ${error.message}`);
+    }
+  }
+
+  async deleteTagCategory(categoryId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/cis/tagging/category/${categoryId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "deleted", category_id: categoryId });
+    } catch (error: any) {
+      return toolError(`Failed to delete tag category: ${error.message}`);
+    }
+  }
+
+  // --- Tag CRUD ---
+  async createTag(params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = {
+        name: params.name,
+        description: params.description || "",
+        category_id: params.category_id,
+      };
+      const response = await http.post("/cis/tagging/tag", spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create tag: ${error.message}`);
+    }
+  }
+
+  async deleteTag(tagId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/cis/tagging/tag/${tagId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "deleted", tag_id: tagId });
+    } catch (error: any) {
+      return toolError(`Failed to delete tag: ${error.message}`);
+    }
+  }
+
+  // --- List objects attached to a tag ---
+  async listObjectsAttachedToTag(tagId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.post(`/cis/tagging/tag-association/${tagId}?action=list-attached-objects`, null, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list objects for tag: ${error.message}`);
+    }
+  }
+
+  // --- VM Template (Library) ---
+  async listVmTemplates() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/vm-template/library-items", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list VM templates: ${error.message}`);
+    }
+  }
+
+  async getVmTemplate(templateId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm-template/library-items/${templateId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get VM template: ${error.message}`);
+    }
+  }
+
+  async deployVmTemplate(params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {
+        name: params.name,
+        placement: {},
+      };
+      if (params.resource_pool) spec.placement.resource_pool = params.resource_pool;
+      if (params.folder) spec.placement.folder = params.folder;
+      if (params.datastore) spec.disk_storage = { datastore: params.datastore };
+      if (params.powered_on !== undefined) spec.powered_on = params.powered_on;
+      const response = await http.post(`/vcenter/vm-template/library-items/${params.template_id}?action=deploy`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to deploy VM template: ${error.message}`);
+    }
+  }
+
+  // --- OVF import/export ---
+  async filterOvfLibraryItem(itemId: string, targetResourcePool: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.post(`/vcenter/ovf/library-item/${itemId}?action=filter`, {
+        target: { resource_pool_id: targetResourcePool },
+      }, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to filter OVF: ${error.message}`);
+    }
+  }
+
+  // --- VM Relocate (vMotion) ---
+  async relocateVm(vmId: string, params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = { placement: {} };
+      if (params.host) spec.placement.host = params.host;
+      if (params.resource_pool) spec.placement.resource_pool = params.resource_pool;
+      if (params.datastore) spec.placement.datastore = params.datastore;
+      if (params.folder) spec.placement.folder = params.folder;
+      await http.post(`/vcenter/vm/${vmId}?action=relocate`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "relocate_initiated", vm_id: vmId });
+    } catch (error: any) {
+      return toolError(`Failed to relocate VM: ${error.message}`);
+    }
+  }
+
+  // --- VM Register/Unregister ---
+  async registerVm(params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {
+        path: params.path,
+        placement: {},
+      };
+      if (params.name) spec.name = params.name;
+      if (params.datastore) spec.datastore = params.datastore;
+      if (params.folder) spec.placement.folder = params.folder;
+      if (params.resource_pool) spec.placement.resource_pool = params.resource_pool;
+      const response = await http.post("/vcenter/vm?action=register", spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to register VM: ${error.message}`);
+    }
+  }
+
+  async unregisterVm(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}?action=unregister`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "unregistered", vm_id: vmId });
+    } catch (error: any) {
+      return toolError(`Failed to unregister VM: ${error.message}`);
+    }
+  }
+
+  // --- VM Instant Clone ---
+  async instantCloneVm(params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {
+        name: params.name,
+        source: params.source_vm_id,
+        placement: {},
+      };
+      if (params.resource_pool) spec.placement.resource_pool = params.resource_pool;
+      if (params.folder) spec.placement.folder = params.folder;
+      if (params.datastore) spec.placement.datastore = params.datastore;
+      const response = await http.post("/vcenter/vm?action=instant-clone", spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to instant clone VM: ${error.message}`);
+    }
+  }
 }
