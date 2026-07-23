@@ -780,4 +780,292 @@ export function registerAtlassianTools(server: McpServer, config: AtlassianConfi
   }, async (params) => {
     return client.confluenceMovePage(params.pageId, params.targetPageId, params.position);
   });
+
+  // =========================================================================
+  // JIRA: Issue Properties
+  // =========================================================================
+
+  server.tool("jira_get_issue_properties", "Get all entity properties on an issue", {
+    issueKey: z.string().describe("Issue key"),
+  }, async (params) => {
+    return client.jiraGetIssueProperties(params.issueKey);
+  });
+
+  server.tool("jira_get_issue_property", "Get a specific issue entity property", {
+    issueKey: z.string().describe("Issue key"),
+    propertyKey: z.string().describe("Property key"),
+  }, async (params) => {
+    return client.jiraGetIssueProperty(params.issueKey, params.propertyKey);
+  });
+
+  server.tool("jira_set_issue_property", "Set an issue entity property", {
+    issueKey: z.string().describe("Issue key"),
+    propertyKey: z.string().describe("Property key"),
+    value: z.any().describe("Property value (JSON)"),
+  }, async (params) => {
+    return client.jiraSetIssueProperty(params.issueKey, params.propertyKey, params.value);
+  });
+
+  server.tool("jira_delete_issue_property", "Delete an issue entity property", {
+    issueKey: z.string().describe("Issue key"),
+    propertyKey: z.string().describe("Property key"),
+  }, async (params) => {
+    return client.jiraDeleteIssueProperty(params.issueKey, params.propertyKey);
+  });
+
+  // =========================================================================
+  // JIRA: Create Meta
+  // =========================================================================
+
+  server.tool("jira_get_create_meta", "Get metadata for creating issues (required fields per type)", {
+    projectKeys: z.array(z.string()).optional().describe("Project keys to include"),
+    issueTypeIds: z.array(z.string()).optional().describe("Issue type IDs to include"),
+  }, async (params) => {
+    return client.jiraGetCreateMeta(params.projectKeys, params.issueTypeIds);
+  });
+
+  // =========================================================================
+  // JIRA: Groups
+  // =========================================================================
+
+  server.tool("jira_get_groups", "Get Jira groups", {
+    query: z.string().optional().describe("Filter by name"),
+    maxResults: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.jiraGetGroups(params.query, params.maxResults);
+  });
+
+  server.tool("jira_get_group_members", "Get members of a Jira group", {
+    groupName: z.string().describe("Group name"),
+    maxResults: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.jiraGetGroupMembers(params.groupName, params.maxResults);
+  });
+
+  // =========================================================================
+  // JIRA: Workflows
+  // =========================================================================
+
+  server.tool("jira_get_workflows", "Get all workflow definitions", {}, async () => {
+    return client.jiraGetWorkflows();
+  });
+
+  server.tool("jira_get_workflow_schemes", "Get workflow schemes for a project", {
+    projectKey: z.string().describe("Project key"),
+  }, async (params) => {
+    return client.jiraGetWorkflowSchemes(params.projectKey);
+  });
+
+  // =========================================================================
+  // JIRA: Screens
+  // =========================================================================
+
+  server.tool("jira_get_screens", "List all screens", {
+    maxResults: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.jiraGetScreens(params.maxResults);
+  });
+
+  server.tool("jira_get_screen_tabs", "Get tabs for a screen", {
+    screenId: z.string().describe("Screen ID"),
+  }, async (params) => {
+    return client.jiraGetScreenTabs(params.screenId);
+  });
+
+  server.tool("jira_get_screen_tab_fields", "Get fields on a screen tab", {
+    screenId: z.string().describe("Screen ID"),
+    tabId: z.string().describe("Tab ID"),
+  }, async (params) => {
+    return client.jiraGetScreenTabFields(params.screenId, params.tabId);
+  });
+
+  // =========================================================================
+  // JIRA: Project Statuses & Types
+  // =========================================================================
+
+  server.tool("jira_get_project_statuses", "Get statuses available in a project", {
+    projectKey: z.string().describe("Project key"),
+  }, async (params) => {
+    return client.jiraGetProjectStatuses(params.projectKey);
+  });
+
+  server.tool("jira_get_project_types", "Get all project types", {}, async () => {
+    return client.jiraGetProjectTypes();
+  });
+
+  // =========================================================================
+  // JIRA: Notifications
+  // =========================================================================
+
+  server.tool("jira_notify_issue", "Send a notification email for an issue", {
+    issueKey: z.string().describe("Issue key"),
+    subject: z.string().describe("Email subject"),
+    textBody: z.string().describe("Email body text"),
+    to: z.record(z.any()).optional().describe("Recipients object (users, groups, etc.)"),
+  }, async (params) => {
+    return client.jiraNotifyIssue(params.issueKey, params);
+  });
+
+  // =========================================================================
+  // JIRA: Configuration & Audit
+  // =========================================================================
+
+  server.tool("jira_get_configuration", "Get global Jira configuration", {}, async () => {
+    return client.jiraGetConfiguration();
+  });
+
+  server.tool("jira_get_audit_records", "Get Jira audit log records", {
+    from: z.string().optional().describe("From date (ISO 8601)"),
+    to: z.string().optional().describe("To date (ISO 8601)"),
+    filter: z.string().optional().describe("Text filter"),
+    limit: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.jiraGetAuditRecords(params);
+  });
+
+  // =========================================================================
+  // JIRA: Security Schemes
+  // =========================================================================
+
+  server.tool("jira_get_issue_security_schemes", "Get all issue security schemes", {}, async () => {
+    return client.jiraGetIssueSecuritySchemes();
+  });
+
+  // =========================================================================
+  // JIRA: Worklog Extended
+  // =========================================================================
+
+  server.tool("jira_update_worklog", "Update an existing worklog entry", {
+    issueKey: z.string().describe("Issue key"),
+    worklogId: z.string().describe("Worklog ID"),
+    timeSpent: z.string().optional().describe("New time spent (e.g. '2h 30m')"),
+    comment: z.string().optional().describe("New comment"),
+    started: z.string().optional().describe("New start time (ISO 8601)"),
+  }, async (params) => {
+    const { issueKey, worklogId, ...rest } = params;
+    return client.jiraUpdateWorklog(issueKey, worklogId, rest);
+  });
+
+  server.tool("jira_delete_worklog", "Delete a worklog entry", {
+    issueKey: z.string().describe("Issue key"),
+    worklogId: z.string().describe("Worklog ID"),
+  }, async (params) => {
+    return client.jiraDeleteWorklog(params.issueKey, params.worklogId);
+  });
+
+  // =========================================================================
+  // CONFLUENCE: Restrictions CRUD
+  // =========================================================================
+
+  server.tool("confluence_set_restrictions", "Set restrictions on a page", {
+    pageId: z.string().describe("Page ID"),
+    restrictions: z.any().describe("Restrictions object (operations with users/groups)"),
+  }, async (params) => {
+    return client.confluenceSetRestrictions(params.pageId, params.restrictions);
+  });
+
+  server.tool("confluence_delete_restrictions", "Remove all restrictions from a page", {
+    pageId: z.string().describe("Page ID"),
+  }, async (params) => {
+    return client.confluenceDeleteRestrictions(params.pageId);
+  });
+
+  // =========================================================================
+  // CONFLUENCE: Space Content & Settings
+  // =========================================================================
+
+  server.tool("confluence_get_space_content", "Get all content in a space", {
+    spaceKey: z.string().describe("Space key"),
+    type: z.enum(["page", "blogpost"]).optional().describe("Content type filter"),
+    limit: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.confluenceGetSpaceContent(params.spaceKey, params.type, params.limit);
+  });
+
+  server.tool("confluence_get_space_settings", "Get space settings", {
+    spaceKey: z.string().describe("Space key"),
+  }, async (params) => {
+    return client.confluenceGetSpaceSettings(params.spaceKey);
+  });
+
+  // =========================================================================
+  // CONFLUENCE: Templates & Blueprints
+  // =========================================================================
+
+  server.tool("confluence_get_templates", "Get page templates", {
+    spaceKey: z.string().optional().describe("Space key to filter templates"),
+  }, async (params) => {
+    return client.confluenceGetTemplates(params.spaceKey);
+  });
+
+  server.tool("confluence_get_blueprints", "Get content blueprints", {}, async () => {
+    return client.confluenceGetBlueprints();
+  });
+
+  server.tool("confluence_create_from_template", "Create a page from a template/blueprint", {
+    templateId: z.string().describe("Content template ID"),
+    spaceKey: z.string().describe("Space key"),
+    title: z.string().describe("Page title"),
+    parentId: z.string().optional().describe("Parent page ID"),
+  }, async (params) => {
+    return client.confluenceCreateFromTemplate(params);
+  });
+
+  // =========================================================================
+  // CONFLUENCE: Long Tasks
+  // =========================================================================
+
+  server.tool("confluence_get_long_tasks", "Get long-running tasks", {
+    limit: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.confluenceGetLongTasks(params.limit);
+  });
+
+  server.tool("confluence_get_long_task", "Get a specific long-running task status", {
+    taskId: z.string().describe("Task ID"),
+  }, async (params) => {
+    return client.confluenceGetLongTask(params.taskId);
+  });
+
+  // =========================================================================
+  // CONFLUENCE: Groups & Audit
+  // =========================================================================
+
+  server.tool("confluence_get_groups", "Get Confluence groups", {
+    limit: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.confluenceGetGroups(params.limit);
+  });
+
+  server.tool("confluence_get_group_members", "Get members of a Confluence group", {
+    groupName: z.string().describe("Group name"),
+    limit: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.confluenceGetGroupMembers(params.groupName, params.limit);
+  });
+
+  server.tool("confluence_get_audit_records", "Get Confluence audit log records", {
+    startDate: z.string().optional().describe("Start date"),
+    endDate: z.string().optional().describe("End date"),
+    limit: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.confluenceGetAuditRecords(params);
+  });
+
+  // =========================================================================
+  // CONFLUENCE: Attachments CRUD
+  // =========================================================================
+
+  server.tool("confluence_delete_attachment", "Delete an attachment from a page", {
+    pageId: z.string().describe("Page ID"),
+    attachmentId: z.string().describe("Attachment content ID"),
+  }, async (params) => {
+    return client.confluenceDeleteAttachment(params.pageId, params.attachmentId);
+  });
+
+  server.tool("confluence_get_attachment_by_id", "Get attachment details by ID", {
+    attachmentId: z.string().describe("Attachment content ID"),
+  }, async (params) => {
+    return client.confluenceGetAttachmentById(params.attachmentId);
+  });
 }
