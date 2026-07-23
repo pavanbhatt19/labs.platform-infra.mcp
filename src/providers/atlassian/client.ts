@@ -1590,4 +1590,145 @@ export class AtlassianClient {
       return toolError(`Failed to get attachment: ${error.message}`);
     }
   }
+
+  // =========================================================================
+  // JIRA: Permissions
+  // =========================================================================
+
+  async jiraGetMyPermissions(params?: Record<string, any>) {
+    try {
+      const query: Record<string, any> = {};
+      if (params?.projectKey) query.projectKey = params.projectKey;
+      if (params?.issueKey) query.issueKey = params.issueKey;
+      const response = await this.http.get("/rest/api/3/mypermissions", { params: query });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get my permissions: ${error.message}`);
+    }
+  }
+
+  async jiraGetAllPermissions() {
+    try {
+      const response = await this.http.get("/rest/api/3/permissions");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get all permissions: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Status Categories
+  // =========================================================================
+
+  async jiraGetStatusCategories() {
+    try {
+      const response = await this.http.get("/rest/api/3/statuscategory");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get status categories: ${error.message}`);
+    }
+  }
+
+  async jiraGetStatusCategory(idOrKey: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/statuscategory/${idOrKey}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get status category: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Custom Fields
+  // =========================================================================
+
+  async jiraGetCustomFields(params?: Record<string, any>) {
+    try {
+      const query: Record<string, any> = {};
+      if (params?.search) query.search = params.search;
+      if (params?.maxResults) query.maxResults = params.maxResults;
+      if (params?.startAt) query.startAt = params.startAt;
+      const response = await this.http.get("/rest/api/3/field/search", { params: query });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get custom fields: ${error.message}`);
+    }
+  }
+
+  async jiraGetCustomFieldOptions(fieldId: string, params?: Record<string, any>) {
+    try {
+      const query: Record<string, any> = {};
+      if (params?.maxResults) query.maxResults = params.maxResults;
+      if (params?.startAt) query.startAt = params.startAt;
+      const response = await this.http.get(`/rest/api/3/field/${fieldId}/context/option`, { params: query });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get custom field options: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Application Properties
+  // =========================================================================
+
+  async jiraGetApplicationProperties(key?: string) {
+    try {
+      const params = key ? { key } : {};
+      const response = await this.http.get("/rest/api/3/application-properties", { params });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get application properties: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Security Levels
+  // =========================================================================
+
+  async jiraGetSecurityLevel(levelId: string) {
+    try {
+      const response = await this.http.get(`/rest/api/3/securitylevel/${levelId}`);
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get security level: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Issue Navigator Columns
+  // =========================================================================
+
+  async jiraGetDefaultColumns() {
+    try {
+      const response = await this.http.get("/rest/api/3/settings/columns");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get default columns: ${error.message}`);
+    }
+  }
+
+  // =========================================================================
+  // JIRA: Favourite Filters Search
+  // =========================================================================
+
+  async jiraGetFavouriteFilters() {
+    try {
+      const response = await this.http.get("/rest/api/3/filter/favourite");
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get favourite filters: ${error.message}`);
+    }
+  }
+
+  async jiraSearchFilters(filterName?: string, maxResults?: number) {
+    try {
+      const params: Record<string, any> = {};
+      if (filterName) params.filterName = filterName;
+      if (maxResults) params.maxResults = maxResults;
+      const response = await this.http.get("/rest/api/3/filter/search", { params });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to search filters: ${error.message}`);
+    }
+  }
 }

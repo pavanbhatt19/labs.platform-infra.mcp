@@ -1068,4 +1068,97 @@ export function registerAtlassianTools(server: McpServer, config: AtlassianConfi
   }, async (params) => {
     return client.confluenceGetAttachmentById(params.attachmentId);
   });
+
+  // =========================================================================
+  // JIRA: Permissions
+  // =========================================================================
+
+  server.tool("jira_get_my_permissions", "Get current user's permissions", {
+    projectKey: z.string().optional().describe("Scope to a project"),
+    issueKey: z.string().optional().describe("Scope to an issue"),
+  }, async (params) => {
+    return client.jiraGetMyPermissions(params);
+  });
+
+  server.tool("jira_get_all_permissions", "Get all permissions defined in Jira", {}, async () => {
+    return client.jiraGetAllPermissions();
+  });
+
+  // =========================================================================
+  // JIRA: Status Categories
+  // =========================================================================
+
+  server.tool("jira_get_status_categories", "Get all status categories", {}, async () => {
+    return client.jiraGetStatusCategories();
+  });
+
+  server.tool("jira_get_status_category", "Get a specific status category", {
+    idOrKey: z.string().describe("Status category ID or key"),
+  }, async (params) => {
+    return client.jiraGetStatusCategory(params.idOrKey);
+  });
+
+  // =========================================================================
+  // JIRA: Custom Fields
+  // =========================================================================
+
+  server.tool("jira_get_custom_fields", "Search/list custom fields", {
+    search: z.string().optional().describe("Search by name"),
+    maxResults: z.number().optional().describe("Max results"),
+    startAt: z.number().optional().describe("Pagination offset"),
+  }, async (params) => {
+    return client.jiraGetCustomFields(params);
+  });
+
+  server.tool("jira_get_custom_field_options", "Get options for a custom field", {
+    fieldId: z.string().describe("Custom field ID (e.g. customfield_10001)"),
+    maxResults: z.number().optional().describe("Max results"),
+    startAt: z.number().optional().describe("Pagination offset"),
+  }, async (params) => {
+    const { fieldId, ...rest } = params;
+    return client.jiraGetCustomFieldOptions(fieldId, rest);
+  });
+
+  // =========================================================================
+  // JIRA: Application Properties
+  // =========================================================================
+
+  server.tool("jira_get_application_properties", "Get Jira application properties/settings", {
+    key: z.string().optional().describe("Specific property key"),
+  }, async (params) => {
+    return client.jiraGetApplicationProperties(params.key);
+  });
+
+  // =========================================================================
+  // JIRA: Security Levels
+  // =========================================================================
+
+  server.tool("jira_get_security_level", "Get a specific security level details", {
+    levelId: z.string().describe("Security level ID"),
+  }, async (params) => {
+    return client.jiraGetSecurityLevel(params.levelId);
+  });
+
+  // =========================================================================
+  // JIRA: Navigator Columns
+  // =========================================================================
+
+  server.tool("jira_get_default_columns", "Get default issue navigator columns", {}, async () => {
+    return client.jiraGetDefaultColumns();
+  });
+
+  // =========================================================================
+  // JIRA: Filter Search
+  // =========================================================================
+
+  server.tool("jira_get_favourite_filters", "Get current user's favourite filters", {}, async () => {
+    return client.jiraGetFavouriteFilters();
+  });
+
+  server.tool("jira_search_filters", "Search for filters by name", {
+    filterName: z.string().optional().describe("Filter name to search"),
+    maxResults: z.number().optional().describe("Max results"),
+  }, async (params) => {
+    return client.jiraSearchFilters(params.filterName, params.maxResults);
+  });
 }
