@@ -855,4 +855,261 @@ export function registerVsphereTools(server: McpServer, config: VsphereConfig) {
   server.tool("vsphere_get_appliance_health_software", "Get vCenter software packages health", {}, async () => {
     return client.getApplianceHealthSoftwarePackages();
   });
+
+  // --- Datacenter CRUD ---
+  server.tool("vsphere_create_datacenter", "Create a new datacenter", {
+    name: z.string().describe("Datacenter name"),
+    folder: z.string().optional().describe("Parent folder ID"),
+  }, async (params) => {
+    return client.createDatacenter(params.name, params.folder);
+  });
+
+  server.tool("vsphere_delete_datacenter", "Delete a datacenter", {
+    datacenter_id: z.string().describe("Datacenter identifier"),
+    force: z.boolean().optional().describe("Force delete even if not empty"),
+  }, async (params) => {
+    return client.deleteDatacenter(params.datacenter_id, params.force);
+  });
+
+  // --- Folder CRUD ---
+  server.tool("vsphere_create_folder", "Create a new folder", {
+    name: z.string().describe("Folder name"),
+    type: z.enum(["DATACENTER", "DATASTORE", "HOST", "NETWORK", "VIRTUAL_MACHINE"]).describe("Folder type"),
+    parent_folder: z.string().optional().describe("Parent folder ID"),
+  }, async (params) => {
+    return client.createFolder(params.name, params.type, params.parent_folder);
+  });
+
+  server.tool("vsphere_delete_folder", "Delete a folder", {
+    folder_id: z.string().describe("Folder identifier"),
+  }, async (params) => {
+    return client.deleteFolder(params.folder_id);
+  });
+
+  // --- Resource Pool CRUD ---
+  server.tool("vsphere_create_resource_pool", "Create a new resource pool", {
+    name: z.string().describe("Resource pool name"),
+    parent: z.string().describe("Parent resource pool or cluster ID"),
+    cpu_allocation: z.record(z.any()).optional().describe("CPU allocation config"),
+    memory_allocation: z.record(z.any()).optional().describe("Memory allocation config"),
+  }, async (params) => {
+    return client.createResourcePool(params);
+  });
+
+  server.tool("vsphere_update_resource_pool", "Update a resource pool", {
+    pool_id: z.string().describe("Resource pool identifier"),
+    name: z.string().optional().describe("New name"),
+    cpu_allocation: z.record(z.any()).optional().describe("CPU allocation config"),
+    memory_allocation: z.record(z.any()).optional().describe("Memory allocation config"),
+  }, async (params) => {
+    const { pool_id, ...rest } = params;
+    return client.updateResourcePool(pool_id, rest);
+  });
+
+  server.tool("vsphere_delete_resource_pool", "Delete a resource pool", {
+    pool_id: z.string().describe("Resource pool identifier"),
+  }, async (params) => {
+    return client.deleteResourcePool(params.pool_id);
+  });
+
+  // --- Host Add/Remove ---
+  server.tool("vsphere_add_host", "Add an ESXi host to vCenter inventory", {
+    hostname: z.string().describe("ESXi hostname or IP"),
+    username: z.string().describe("ESXi root username"),
+    password: z.string().describe("ESXi root password"),
+    folder: z.string().optional().describe("Host folder ID"),
+    thumbprint: z.string().optional().describe("SSL thumbprint for verification"),
+  }, async (params) => {
+    return client.addHostToCluster(params);
+  });
+
+  server.tool("vsphere_remove_host", "Remove an ESXi host from vCenter inventory", {
+    host_id: z.string().describe("Host identifier"),
+  }, async (params) => {
+    return client.removeHost(params.host_id);
+  });
+
+  // --- Content Library CRUD ---
+  server.tool("vsphere_create_content_library", "Create a new local content library", {
+    name: z.string().describe("Library name"),
+    datastore_id: z.string().describe("Backing datastore ID"),
+    description: z.string().optional().describe("Library description"),
+  }, async (params) => {
+    return client.createContentLibrary(params);
+  });
+
+  server.tool("vsphere_delete_content_library", "Delete a content library", {
+    library_id: z.string().describe("Library identifier"),
+  }, async (params) => {
+    return client.deleteContentLibrary(params.library_id);
+  });
+
+  server.tool("vsphere_get_content_library", "Get content library details", {
+    library_id: z.string().describe("Library identifier"),
+  }, async (params) => {
+    return client.getContentLibrary(params.library_id);
+  });
+
+  server.tool("vsphere_get_library_item", "Get a specific library item details", {
+    item_id: z.string().describe("Library item identifier"),
+  }, async (params) => {
+    return client.getLibraryItem(params.item_id);
+  });
+
+  server.tool("vsphere_sync_subscribed_library", "Sync a subscribed content library", {
+    library_id: z.string().describe("Subscribed library identifier"),
+  }, async (params) => {
+    return client.syncSubscribedLibrary(params.library_id);
+  });
+
+  // --- Namespaces (vSphere with Tanzu) ---
+  server.tool("vsphere_list_namespaces", "List Supervisor namespaces (Tanzu)", {}, async () => {
+    return client.listNamespaces();
+  });
+
+  server.tool("vsphere_get_namespace", "Get Supervisor namespace details", {
+    namespace: z.string().describe("Namespace name"),
+  }, async (params) => {
+    return client.getNamespace(params.namespace);
+  });
+
+  server.tool("vsphere_list_supervisor_clusters", "List Supervisor clusters (Tanzu)", {}, async () => {
+    return client.listSupervisorClusters();
+  });
+
+  // --- Guest File Transfer ---
+  server.tool("vsphere_guest_create_temp_file", "Create a temp file in guest OS", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+    prefix: z.string().optional().describe("Filename prefix"),
+    suffix: z.string().optional().describe("Filename suffix"),
+  }, async (params) => {
+    return client.guestCreateTempFile(params.vm_id, params.username, params.password, params.prefix, params.suffix);
+  });
+
+  server.tool("vsphere_guest_create_temp_directory", "Create a temp directory in guest OS", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+    prefix: z.string().optional().describe("Directory prefix"),
+    suffix: z.string().optional().describe("Directory suffix"),
+  }, async (params) => {
+    return client.guestCreateTempDirectory(params.vm_id, params.username, params.password, params.prefix, params.suffix);
+  });
+
+  server.tool("vsphere_guest_make_directory", "Create a directory in guest OS", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+    path: z.string().describe("Directory path to create"),
+    create_parents: z.boolean().optional().describe("Create parent directories"),
+  }, async (params) => {
+    return client.guestMakeDirectory(params.vm_id, params.username, params.password, params.path, params.create_parents);
+  });
+
+  server.tool("vsphere_guest_delete_path", "Delete a file or directory in guest OS", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+    path: z.string().describe("Path to delete"),
+    recursive: z.boolean().optional().describe("Recursive delete for directories"),
+  }, async (params) => {
+    return client.guestDeletePath(params.vm_id, params.username, params.password, params.path, params.recursive);
+  });
+
+  server.tool("vsphere_guest_move_file", "Move/rename a file in guest OS", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+    src_path: z.string().describe("Source path"),
+    dest_path: z.string().describe("Destination path"),
+  }, async (params) => {
+    return client.guestMoveFile(params.vm_id, params.username, params.password, params.src_path, params.dest_path);
+  });
+
+  // --- Guest Windows Registry ---
+  server.tool("vsphere_guest_list_registry_keys", "List Windows registry keys (Windows guests only)", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+    path: z.string().describe("Registry path (e.g. HKLM\\SOFTWARE)"),
+  }, async (params) => {
+    return client.guestListRegistryKeys(params.vm_id, params.username, params.password, params.path);
+  });
+
+  server.tool("vsphere_guest_get_registry_value", "Get a Windows registry value (Windows guests only)", {
+    vm_id: z.string().describe("VM identifier"),
+    username: z.string().describe("Guest OS username"),
+    password: z.string().describe("Guest OS password"),
+    path: z.string().describe("Registry key path"),
+    name: z.string().describe("Value name"),
+  }, async (params) => {
+    return client.guestGetRegistryValue(params.vm_id, params.username, params.password, params.path, params.name);
+  });
+
+  // --- Appliance Recovery & Backup ---
+  server.tool("vsphere_get_backup_schedules", "Get vCenter backup schedules", {}, async () => {
+    return client.getApplianceBackupSchedules();
+  });
+
+  server.tool("vsphere_get_backup_jobs", "Get vCenter backup job history", {}, async () => {
+    return client.getApplianceBackupJobs();
+  });
+
+  // --- Appliance Updates ---
+  server.tool("vsphere_get_pending_updates", "Get pending vCenter updates", {}, async () => {
+    return client.getApplianceUpdatePending();
+  });
+
+  server.tool("vsphere_get_staged_updates", "Get staged vCenter updates", {}, async () => {
+    return client.getApplianceUpdateStaged();
+  });
+
+  server.tool("vsphere_get_update_policy", "Get vCenter auto-update policy", {}, async () => {
+    return client.getApplianceUpdatePolicy();
+  });
+
+  // --- Appliance NTP/DNS/Proxy/Firewall ---
+  server.tool("vsphere_get_appliance_ntp", "Get vCenter NTP configuration", {}, async () => {
+    return client.getApplianceNtp();
+  });
+
+  server.tool("vsphere_get_appliance_dns", "Get vCenter DNS servers", {}, async () => {
+    return client.getApplianceDns();
+  });
+
+  server.tool("vsphere_get_appliance_dns_hostname", "Get vCenter DNS hostname", {}, async () => {
+    return client.getApplianceDnsHostname();
+  });
+
+  server.tool("vsphere_get_appliance_proxy", "Get vCenter proxy configuration", {}, async () => {
+    return client.getApplianceProxy();
+  });
+
+  server.tool("vsphere_get_appliance_firewall", "Get vCenter firewall inbound rules", {}, async () => {
+    return client.getApplianceFirewall();
+  });
+
+  // --- Appliance Access ---
+  server.tool("vsphere_get_appliance_access_shell", "Get vCenter shell access status", {}, async () => {
+    return client.getApplianceAccessShell();
+  });
+
+  server.tool("vsphere_get_appliance_access_ssh", "Get vCenter SSH access status", {}, async () => {
+    return client.getApplianceAccessSsh();
+  });
+
+  server.tool("vsphere_get_appliance_access_dcui", "Get vCenter DCUI access status", {}, async () => {
+    return client.getApplianceAccessDcui();
+  });
+
+  // --- Appliance Time ---
+  server.tool("vsphere_get_appliance_timezone", "Get vCenter timezone", {}, async () => {
+    return client.getApplianceTimezone();
+  });
+
+  server.tool("vsphere_get_appliance_time", "Get vCenter system time", {}, async () => {
+    return client.getApplianceTime();
+  });
 }

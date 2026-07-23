@@ -1605,4 +1605,509 @@ export class VsphereClient {
       return toolError(`Failed to get software packages health: ${error.message}`);
     }
   }
+
+  // --- Datacenter CRUD ---
+  async createDatacenter(name: string, folder?: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = { name };
+      if (folder) spec.folder = folder;
+      const response = await http.post("/vcenter/datacenter", spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create datacenter: ${error.message}`);
+    }
+  }
+
+  async deleteDatacenter(datacenterId: string, force?: boolean) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const params = force ? { force: true } : {};
+      await http.delete(`/vcenter/datacenter/${datacenterId}`, { headers: this.getHeaders(), params });
+      return toolResult({ status: "deleted", datacenter_id: datacenterId });
+    } catch (error: any) {
+      return toolError(`Failed to delete datacenter: ${error.message}`);
+    }
+  }
+
+  // --- Folder CRUD ---
+  async createFolder(name: string, type: string, parentFolder?: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = { name, type };
+      if (parentFolder) spec.parent_folder = parentFolder;
+      const response = await http.post("/vcenter/folder", spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create folder: ${error.message}`);
+    }
+  }
+
+  async deleteFolder(folderId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/vcenter/folder/${folderId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "deleted", folder_id: folderId });
+    } catch (error: any) {
+      return toolError(`Failed to delete folder: ${error.message}`);
+    }
+  }
+
+  // --- Resource Pool CRUD ---
+  async createResourcePool(params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {
+        name: params.name,
+        parent: params.parent,
+      };
+      if (params.cpu_allocation) spec.cpu_allocation = params.cpu_allocation;
+      if (params.memory_allocation) spec.memory_allocation = params.memory_allocation;
+      const response = await http.post("/vcenter/resource-pool", spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create resource pool: ${error.message}`);
+    }
+  }
+
+  async updateResourcePool(poolId: string, params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {};
+      if (params.name) spec.name = params.name;
+      if (params.cpu_allocation) spec.cpu_allocation = params.cpu_allocation;
+      if (params.memory_allocation) spec.memory_allocation = params.memory_allocation;
+      await http.patch(`/vcenter/resource-pool/${poolId}`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "updated", pool_id: poolId });
+    } catch (error: any) {
+      return toolError(`Failed to update resource pool: ${error.message}`);
+    }
+  }
+
+  async deleteResourcePool(poolId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/vcenter/resource-pool/${poolId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "deleted", pool_id: poolId });
+    } catch (error: any) {
+      return toolError(`Failed to delete resource pool: ${error.message}`);
+    }
+  }
+
+  // --- Host Add/Remove from cluster ---
+  async addHostToCluster(params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = {
+        hostname: params.hostname,
+        user_name: params.username,
+        password: params.password,
+        folder: params.folder,
+        thumbprint_verification: params.thumbprint ? "THUMBPRINT" : "NONE",
+        thumbprint: params.thumbprint || undefined,
+      };
+      const response = await http.post("/vcenter/host", spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to add host: ${error.message}`);
+    }
+  }
+
+  async removeHost(hostId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/vcenter/host/${hostId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "removed", host_id: hostId });
+    } catch (error: any) {
+      return toolError(`Failed to remove host: ${error.message}`);
+    }
+  }
+
+  // --- Content Library CRUD ---
+  async createContentLibrary(params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {
+        name: params.name,
+        type: params.type || "LOCAL",
+        storage_backings: [{ type: "DATASTORE", datastore_id: params.datastore_id }],
+      };
+      if (params.description) spec.description = params.description;
+      const response = await http.post("/content/local-library", spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create content library: ${error.message}`);
+    }
+  }
+
+  async deleteContentLibrary(libraryId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/content/local-library/${libraryId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "deleted", library_id: libraryId });
+    } catch (error: any) {
+      return toolError(`Failed to delete content library: ${error.message}`);
+    }
+  }
+
+  async getContentLibrary(libraryId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/content/library/${libraryId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get content library: ${error.message}`);
+    }
+  }
+
+  async getLibraryItem(itemId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/content/library/item/${itemId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get library item: ${error.message}`);
+    }
+  }
+
+  async syncSubscribedLibrary(libraryId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/content/subscribed-library/${libraryId}?action=sync`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "sync_initiated", library_id: libraryId });
+    } catch (error: any) {
+      return toolError(`Failed to sync library: ${error.message}`);
+    }
+  }
+
+  // --- Namespaces (vSphere with Tanzu) ---
+  async listNamespaces() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/namespaces/instances", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list namespaces: ${error.message}`);
+    }
+  }
+
+  async getNamespace(namespace: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/namespaces/instances/${namespace}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get namespace: ${error.message}`);
+    }
+  }
+
+  async listSupervisorClusters() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/namespace-management/clusters", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list supervisor clusters: ${error.message}`);
+    }
+  }
+
+  // --- Guest File Transfer ---
+  async guestCreateTempFile(vmId: string, username: string, password: string, prefix?: string, suffix?: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+        prefix: prefix || "tmp",
+        suffix: suffix || "",
+      };
+      const response = await http.post(`/vcenter/vm/${vmId}/guest/filesystem?action=create-temporary-file`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create temp file: ${error.message}`);
+    }
+  }
+
+  async guestCreateTempDirectory(vmId: string, username: string, password: string, prefix?: string, suffix?: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+        prefix: prefix || "tmp",
+        suffix: suffix || "",
+      };
+      const response = await http.post(`/vcenter/vm/${vmId}/guest/filesystem?action=create-temporary-directory`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to create temp directory: ${error.message}`);
+    }
+  }
+
+  async guestMakeDirectory(vmId: string, username: string, password: string, path: string, createParents?: boolean) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+        path,
+        create_parents: createParents || false,
+      };
+      await http.post(`/vcenter/vm/${vmId}/guest/filesystem/directories?action=create`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "created", path });
+    } catch (error: any) {
+      return toolError(`Failed to create directory: ${error.message}`);
+    }
+  }
+
+  async guestDeletePath(vmId: string, username: string, password: string, path: string, recursive?: boolean) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+        path,
+        recursive: recursive || false,
+      };
+      await http.post(`/vcenter/vm/${vmId}/guest/filesystem?action=delete`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "deleted", path });
+    } catch (error: any) {
+      return toolError(`Failed to delete path: ${error.message}`);
+    }
+  }
+
+  async guestMoveFile(vmId: string, username: string, password: string, srcPath: string, destPath: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+        path: srcPath,
+        new_path: destPath,
+      };
+      await http.post(`/vcenter/vm/${vmId}/guest/filesystem?action=move`, spec, { headers: this.getHeaders() });
+      return toolResult({ status: "moved", from: srcPath, to: destPath });
+    } catch (error: any) {
+      return toolError(`Failed to move file: ${error.message}`);
+    }
+  }
+
+  // --- Guest Windows Registry ---
+  async guestListRegistryKeys(vmId: string, username: string, password: string, path: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+        path,
+      };
+      const response = await http.post(`/vcenter/vm/${vmId}/guest/registry?action=list`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list registry keys: ${error.message}`);
+    }
+  }
+
+  async guestGetRegistryValue(vmId: string, username: string, password: string, path: string, name: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec = {
+        credentials: { type: "USERNAME_PASSWORD", user_name: username, password },
+        path,
+        name,
+      };
+      const response = await http.post(`/vcenter/vm/${vmId}/guest/registry?action=get-value`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get registry value: ${error.message}`);
+    }
+  }
+
+  // --- Appliance Recovery & Backup ---
+  async getApplianceBackupSchedules() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/recovery/backup/schedules", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get backup schedules: ${error.message}`);
+    }
+  }
+
+  async getApplianceBackupJobs() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/recovery/backup/jobs", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get backup jobs: ${error.message}`);
+    }
+  }
+
+  // --- Appliance Updates ---
+  async getApplianceUpdatePending() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/update/pending", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get pending updates: ${error.message}`);
+    }
+  }
+
+  async getApplianceUpdateStaged() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/update/staged", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get staged updates: ${error.message}`);
+    }
+  }
+
+  async getApplianceUpdatePolicy() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/update/policy", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get update policy: ${error.message}`);
+    }
+  }
+
+  // --- Appliance NTP/DNS/Proxy ---
+  async getApplianceNtp() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/ntp", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get NTP config: ${error.message}`);
+    }
+  }
+
+  async getApplianceDns() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/networking/dns/servers", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get DNS config: ${error.message}`);
+    }
+  }
+
+  async getApplianceDnsHostname() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/networking/dns/hostname", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get DNS hostname: ${error.message}`);
+    }
+  }
+
+  async getApplianceProxy() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/networking/proxy", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get proxy config: ${error.message}`);
+    }
+  }
+
+  async getApplianceFirewall() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/networking/firewall/inbound", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get firewall rules: ${error.message}`);
+    }
+  }
+
+  // --- Appliance Access ---
+  async getApplianceAccessShell() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/access/shell", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get shell access: ${error.message}`);
+    }
+  }
+
+  async getApplianceAccessSsh() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/access/ssh", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get SSH access: ${error.message}`);
+    }
+  }
+
+  async getApplianceAccessDcui() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/access/dcui", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get DCUI access: ${error.message}`);
+    }
+  }
+
+  // --- Appliance Time/Timezone ---
+  async getApplianceTimezone() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/system/time/timezone", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get timezone: ${error.message}`);
+    }
+  }
+
+  async getApplianceTime() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/appliance/system/time", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get system time: ${error.message}`);
+    }
+  }
 }
