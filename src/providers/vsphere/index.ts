@@ -131,4 +131,161 @@ export function registerVsphereTools(server: McpServer, config: VsphereConfig) {
   server.tool("vsphere_list_resource_pools", "List all resource pools", {}, async () => {
     return client.listResourcePools();
   });
+
+  server.tool("vsphere_get_resource_pool", "Get resource pool details", {
+    pool_id: z.string().describe("Resource pool identifier"),
+  }, async (params) => {
+    return client.getResourcePool(params.pool_id);
+  });
+
+  // --- Snapshot extras ---
+  server.tool("vsphere_revert_snapshot", "Revert a VM to a specific snapshot", {
+    vm_id: z.string().describe("VM identifier"),
+    snapshot_id: z.string().describe("Snapshot identifier"),
+  }, async (params) => {
+    return client.revertSnapshot(params.vm_id, params.snapshot_id);
+  });
+
+  server.tool("vsphere_delete_snapshot", "Delete a VM snapshot", {
+    vm_id: z.string().describe("VM identifier"),
+    snapshot_id: z.string().describe("Snapshot identifier"),
+  }, async (params) => {
+    return client.deleteSnapshot(params.vm_id, params.snapshot_id);
+  });
+
+  // --- Host details ---
+  server.tool("vsphere_get_host", "Get detailed information about an ESXi host", {
+    host_id: z.string().describe("Host identifier"),
+  }, async (params) => {
+    return client.getHost(params.host_id);
+  });
+
+  server.tool("vsphere_host_maintenance", "Enter or exit maintenance mode on an ESXi host", {
+    host_id: z.string().describe("Host identifier"),
+    action: z.enum(["enter", "exit"]).describe("Maintenance action"),
+  }, async (params) => {
+    return client.hostMaintenance(params.host_id, params.action);
+  });
+
+  // --- Datastore/Cluster details ---
+  server.tool("vsphere_get_datastore", "Get datastore details", {
+    datastore_id: z.string().describe("Datastore identifier"),
+  }, async (params) => {
+    return client.getDatastore(params.datastore_id);
+  });
+
+  server.tool("vsphere_get_cluster", "Get cluster details (DRS, HA status)", {
+    cluster_id: z.string().describe("Cluster identifier"),
+  }, async (params) => {
+    return client.getCluster(params.cluster_id);
+  });
+
+  // --- Datacenters ---
+  server.tool("vsphere_list_datacenters", "List all datacenters", {}, async () => {
+    return client.listDatacenters();
+  });
+
+  // --- Tags ---
+  server.tool("vsphere_list_tag_categories", "List all tag categories", {}, async () => {
+    return client.listTagCategories();
+  });
+
+  server.tool("vsphere_list_tags", "List tags, optionally by category", {
+    category_id: z.string().optional().describe("Category ID to filter by"),
+  }, async (params) => {
+    return client.listTags(params.category_id);
+  });
+
+  server.tool("vsphere_get_tag", "Get tag details", {
+    tag_id: z.string().describe("Tag identifier"),
+  }, async (params) => {
+    return client.getTag(params.tag_id);
+  });
+
+  server.tool("vsphere_attach_tag", "Attach a tag to an object", {
+    tag_id: z.string().describe("Tag identifier"),
+    object_id: z.string().describe("Object identifier (e.g. vm-123)"),
+    object_type: z.string().describe("Object type (e.g. VirtualMachine, HostSystem, Datastore)"),
+  }, async (params) => {
+    return client.attachTag(params.tag_id, params.object_id, params.object_type);
+  });
+
+  server.tool("vsphere_detach_tag", "Detach a tag from an object", {
+    tag_id: z.string().describe("Tag identifier"),
+    object_id: z.string().describe("Object identifier"),
+    object_type: z.string().describe("Object type"),
+  }, async (params) => {
+    return client.detachTag(params.tag_id, params.object_id, params.object_type);
+  });
+
+  server.tool("vsphere_list_attached_tags", "List all tags attached to an object", {
+    object_id: z.string().describe("Object identifier"),
+    object_type: z.string().describe("Object type (e.g. VirtualMachine)"),
+  }, async (params) => {
+    return client.listAttachedTags(params.object_id, params.object_type);
+  });
+
+  // --- Content Libraries ---
+  server.tool("vsphere_list_content_libraries", "List content libraries", {}, async () => {
+    return client.listContentLibraries();
+  });
+
+  server.tool("vsphere_list_library_items", "List items in a content library", {
+    library_id: z.string().describe("Content library ID"),
+  }, async (params) => {
+    return client.listLibraryItems(params.library_id);
+  });
+
+  server.tool("vsphere_deploy_library_item", "Deploy a VM from a library item (OVF/template)", {
+    item_id: z.string().describe("Library item ID"),
+    name: z.string().describe("Name for the deployed VM"),
+    resource_pool: z.string().optional().describe("Resource pool ID"),
+    folder: z.string().optional().describe("Folder ID"),
+    datastore: z.string().optional().describe("Datastore ID"),
+  }, async (params) => {
+    return client.deployLibraryItem(params);
+  });
+
+  // --- Disks ---
+  server.tool("vsphere_list_disks", "List disks attached to a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.listDisks(params.vm_id);
+  });
+
+  server.tool("vsphere_add_disk", "Add a new disk to a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    capacity_GiB: z.number().describe("Disk capacity in GiB"),
+  }, async (params) => {
+    return client.addDisk(params.vm_id, params.capacity_GiB);
+  });
+
+  server.tool("vsphere_remove_disk", "Remove a disk from a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    disk_id: z.string().describe("Disk identifier (e.g. 2000)"),
+  }, async (params) => {
+    return client.removeDisk(params.vm_id, params.disk_id);
+  });
+
+  // --- NICs ---
+  server.tool("vsphere_list_nics", "List network adapters on a VM", {
+    vm_id: z.string().describe("VM identifier"),
+  }, async (params) => {
+    return client.listNics(params.vm_id);
+  });
+
+  server.tool("vsphere_add_nic", "Add a network adapter to a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    network: z.string().describe("Network ID to connect to"),
+    start_connected: z.boolean().optional().describe("Connect on power on (default: true)"),
+  }, async (params) => {
+    return client.addNic(params.vm_id, params.network, params.start_connected);
+  });
+
+  server.tool("vsphere_remove_nic", "Remove a network adapter from a VM", {
+    vm_id: z.string().describe("VM identifier"),
+    nic_id: z.string().describe("NIC identifier (e.g. 4000)"),
+  }, async (params) => {
+    return client.removeNic(params.vm_id, params.nic_id);
+  });
 }

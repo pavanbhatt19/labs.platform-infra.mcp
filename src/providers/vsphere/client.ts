@@ -283,4 +283,294 @@ export class VsphereClient {
       return toolError(`Failed to list resource pools: ${error.message}`);
     }
   }
+
+  // --- Snapshot operations ---
+  async revertSnapshot(vmId: string, snapshotId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/vcenter/vm/${vmId}/snapshots/${snapshotId}?action=revert`, null, { headers: this.getHeaders() });
+      return toolResult({ status: "reverted", vm_id: vmId, snapshot_id: snapshotId });
+    } catch (error: any) {
+      return toolError(`Failed to revert snapshot: ${error.message}`);
+    }
+  }
+
+  async deleteSnapshot(vmId: string, snapshotId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/vcenter/vm/${vmId}/snapshots/${snapshotId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "deleted", vm_id: vmId, snapshot_id: snapshotId });
+    } catch (error: any) {
+      return toolError(`Failed to delete snapshot: ${error.message}`);
+    }
+  }
+
+  // --- Hosts ---
+  async getHost(hostId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/host/${hostId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get host: ${error.message}`);
+    }
+  }
+
+  async hostMaintenance(hostId: string, action: "enter" | "exit") {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      if (action === "enter") {
+        await http.post(`/vcenter/host/${hostId}?action=enter-maintenance-mode`, null, { headers: this.getHeaders() });
+      } else {
+        await http.post(`/vcenter/host/${hostId}?action=exit-maintenance-mode`, null, { headers: this.getHeaders() });
+      }
+      return toolResult({ status: "success", host_id: hostId, action: `${action}_maintenance` });
+    } catch (error: any) {
+      return toolError(`Failed to ${action} maintenance mode: ${error.message}`);
+    }
+  }
+
+  // --- Datastores ---
+  async getDatastore(datastoreId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/datastore/${datastoreId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get datastore: ${error.message}`);
+    }
+  }
+
+  // --- Clusters ---
+  async getCluster(clusterId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/cluster/${clusterId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get cluster: ${error.message}`);
+    }
+  }
+
+  // --- Resource Pools ---
+  async getResourcePool(poolId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/resource-pool/${poolId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get resource pool: ${error.message}`);
+    }
+  }
+
+  // --- Datacenters ---
+  async listDatacenters() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/vcenter/datacenter", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list datacenters: ${error.message}`);
+    }
+  }
+
+  // --- Tags ---
+  async listTagCategories() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/cis/tagging/category", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list tag categories: ${error.message}`);
+    }
+  }
+
+  async listTags(categoryId?: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      if (categoryId) {
+        const response = await http.post(`/cis/tagging/tag/list-tags-for-category`, { category_id: categoryId }, { headers: this.getHeaders() });
+        return toolResult(response.data);
+      }
+      const response = await http.get("/cis/tagging/tag", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list tags: ${error.message}`);
+    }
+  }
+
+  async getTag(tagId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/cis/tagging/tag/${tagId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to get tag: ${error.message}`);
+    }
+  }
+
+  async attachTag(tagId: string, objectId: string, objectType: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/cis/tagging/tag-association/${tagId}?action=attach`, {
+        object_id: { id: objectId, type: objectType },
+      }, { headers: this.getHeaders() });
+      return toolResult({ status: "attached", tag_id: tagId, object_id: objectId });
+    } catch (error: any) {
+      return toolError(`Failed to attach tag: ${error.message}`);
+    }
+  }
+
+  async detachTag(tagId: string, objectId: string, objectType: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.post(`/cis/tagging/tag-association/${tagId}?action=detach`, {
+        object_id: { id: objectId, type: objectType },
+      }, { headers: this.getHeaders() });
+      return toolResult({ status: "detached", tag_id: tagId, object_id: objectId });
+    } catch (error: any) {
+      return toolError(`Failed to detach tag: ${error.message}`);
+    }
+  }
+
+  async listAttachedTags(objectId: string, objectType: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.post("/cis/tagging/tag-association?action=list-attached-tags", {
+        object_id: { id: objectId, type: objectType },
+      }, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list attached tags: ${error.message}`);
+    }
+  }
+
+  // --- Content Libraries ---
+  async listContentLibraries() {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get("/content/library", { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list content libraries: ${error.message}`);
+    }
+  }
+
+  async listLibraryItems(libraryId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/content/library/item?library_id=${libraryId}`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list library items: ${error.message}`);
+    }
+  }
+
+  async deployLibraryItem(params: Record<string, any>) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {
+        name: params.name,
+        target: {},
+      };
+      if (params.resource_pool) spec.target.resource_pool_id = params.resource_pool;
+      if (params.folder) spec.target.folder_id = params.folder;
+      if (params.datastore) spec.default_datastore_id = params.datastore;
+      const response = await http.post(`/vcenter/ovf/library-item/${params.item_id}?action=deploy`, { deployment_spec: spec }, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to deploy library item: ${error.message}`);
+    }
+  }
+
+  // --- Disks ---
+  async listDisks(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/disk`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list disks: ${error.message}`);
+    }
+  }
+
+  async addDisk(vmId: string, capacityGiB: number) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.post(`/vcenter/vm/${vmId}/hardware/disk`, {
+        new_vmdk: { capacity: capacityGiB * 1024 * 1024 * 1024 },
+      }, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to add disk: ${error.message}`);
+    }
+  }
+
+  async removeDisk(vmId: string, diskId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/vcenter/vm/${vmId}/hardware/disk/${diskId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "removed", vm_id: vmId, disk_id: diskId });
+    } catch (error: any) {
+      return toolError(`Failed to remove disk: ${error.message}`);
+    }
+  }
+
+  // --- NICs ---
+  async listNics(vmId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const response = await http.get(`/vcenter/vm/${vmId}/hardware/ethernet`, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to list NICs: ${error.message}`);
+    }
+  }
+
+  async addNic(vmId: string, network: string, startConnected?: boolean) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      const spec: Record<string, any> = {
+        backing: { type: "STANDARD_PORTGROUP", network },
+        start_connected: startConnected !== false,
+      };
+      const response = await http.post(`/vcenter/vm/${vmId}/hardware/ethernet`, spec, { headers: this.getHeaders() });
+      return toolResult(response.data);
+    } catch (error: any) {
+      return toolError(`Failed to add NIC: ${error.message}`);
+    }
+  }
+
+  async removeNic(vmId: string, nicId: string) {
+    try {
+      await this.ensureConnected();
+      const http = this.getHttp();
+      await http.delete(`/vcenter/vm/${vmId}/hardware/ethernet/${nicId}`, { headers: this.getHeaders() });
+      return toolResult({ status: "removed", vm_id: vmId, nic_id: nicId });
+    } catch (error: any) {
+      return toolError(`Failed to remove NIC: ${error.message}`);
+    }
+  }
 }
